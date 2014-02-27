@@ -21,7 +21,7 @@ using namespace std;
  		("input-file", po::value< vector<string> >(), "input file")
  	;
 
- 	po::positional_options_descirption p;
+ 	po::positional_options_description p;
  	p.add("input-file", -1);
 
  	po::variables_map vm;
