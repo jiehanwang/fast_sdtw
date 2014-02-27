@@ -36,10 +36,8 @@ using namespace std;
  		return 1;
  	}
 
-	if (vm.count("input-file"))
-	{
-    	cout << "Input files are: " 
-       	<< vm["input-file"].as< vector<string> >() << "\n";
+	if (vm.count("input-file")) {
+    	cout << "Input files are: " << vm["input-file"].as< vector<string> >() << "\n";
 	}
 
  	return 0;
