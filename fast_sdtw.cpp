@@ -20,7 +20,7 @@ using namespace std;
  	po::options_description desc("Allowed options");
  	desc.add_options()
  		("help", "Print help message")
- 		("input-file", po::value< vector<string> >()->required(), "input file")
+ 		("input-file", po::value< vector<string> >(), "input file")
  	;
 
  	po::positional_options_description p;
@@ -37,10 +37,10 @@ using namespace std;
  	}
 
 	if (vm.count("input-file")) {
-		const vector<string> &input_files = vm["intput-file"].as< vector<string> >();
+		//const vector<string> &input_files = vm["intput-file"].as< vector<string> >();
     	cout << "Input files are: ";
-    	for (vector<string>::const_iterator it = input_files.begin();
-    		 it != input_files.end(); ++it) {
+    	for (vector<string>::const_iterator it = vm["intput-file"].as< vector<string> >().begin();
+    		 it != vm["intput-file"].as< vector<string> >().end(); ++it) {
     		cout << *it << ' ';
     	}
     	cout << endl;
