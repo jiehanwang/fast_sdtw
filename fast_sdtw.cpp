@@ -37,7 +37,13 @@ using namespace std;
  	}
 
 	if (vm.count("input-file")) {
-    	cout << "Input files are: " << vm["input-file"].as< vector<string> >() << endl;
+		vector<string> input_files = vm["intput-file"].as< vector<string> >();
+    	cout << "Input files are: ";
+    	for (vector<string>::const_iterator it = input_files.begin();
+    		 it != input_files.end(); ++it) {
+    		cout << *it << ' ';
+    	}
+    	cout << endl;
 	}
 
  	return 0;
