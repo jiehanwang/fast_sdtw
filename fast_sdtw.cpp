@@ -7,7 +7,6 @@ namespace po = boost::program_options;
 #include <iterator>
 using namespace std;
 
-// A helper function to simplify the main part.
 template<class T>
 ostream& operator<<(ostream& os, const vector<T>& v) {
 	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " "));
@@ -16,21 +15,15 @@ ostream& operator<<(ostream& os, const vector<T>& v) {
 
 int main(int argc, char* argv[]) {
 	try {
-		int opt;
-		int portnum;
+		int L;
 		
 		po::options_description desc("Allowed options");
 		desc.add_options()
 		("help", "produce help message")
-		("optimization", po::value<int>(&opt)->default_value(10),
-		 "optimization level")
+		("smoother_L", po::value<int>(&L)->default_value(7),
+		 "median smoother radius")
 		("verbose,v", po::value<int>()->implicit_value(1),
 		 "enable verbosity (optionally specify level)")
-		("listen,l", po::value<int>(&portnum)->implicit_value(1001)
-		 ->default_value(0,"no"),
-		 "listen on a port.")
-		("include-path,I", po::value< vector<string> >(),
-		 "include path")
 		("input-file", po::value< vector<string> >(), "input file");
 		
 		po::positional_options_description p;
@@ -46,11 +39,6 @@ int main(int argc, char* argv[]) {
 			cout << desc;
 			return 0;
 		}
-		if (vm.count("include-path"))
-		{
-			cout << "Include paths are: "
-			<< vm["include-path"].as< vector<string> >() << "\n";
-		}
 		if (vm.count("input-file"))
 		{
 			cout << "Input files are: "
@@ -60,8 +48,7 @@ int main(int argc, char* argv[]) {
 			cout << "Verbosity enabled. Level is " << vm["verbose"].as<int>()
 			<< "\n";
 		}
-		cout << "Optimization level is " << opt << "\n";
-		cout << "Listen port is " << portnum << "\n";
+		cout << "Total median smoother length is " << (2 * opt + 1) << "\n";
 	}
 	catch(std::exception& e) {
 		cout << e.what() << "\n";
