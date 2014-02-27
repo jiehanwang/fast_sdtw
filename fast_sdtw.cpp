@@ -20,7 +20,7 @@ using namespace std;
  	po::options_description desc("Allowed options");
  	desc.add_options()
  		("help", "Print help message")
- 		("input-file", po::value< vector<string> >(), "input file")
+ 		("input-file", po::value< vector<string> >()->required(), "input file")
  	;
 
  	po::positional_options_description p;
