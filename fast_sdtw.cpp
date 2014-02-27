@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 			cout << "Verbosity enabled. Level is " << vm["verbose"].as<int>()
 			<< "\n";
 		}
-		cout << "Total median smoother length is " << (2 * opt + 1) << "\n";
+		cout << "Total median smoother length is " << (2 * L + 1) << "\n";
 	}
 	catch(std::exception& e) {
 		cout << e.what() << "\n";
