@@ -10,6 +10,8 @@ using namespace boost;
 namespace po = boost::program_options;
 
 #include <iostream>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
