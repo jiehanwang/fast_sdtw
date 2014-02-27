@@ -32,12 +32,12 @@ using namespace std;
  	po::notify(vm);
 
  	if (vm.count("help")) {
- 		cout << desc << "\n";
+ 		cout << desc << endl;
  		return 1;
  	}
 
 	if (vm.count("input-file")) {
-    	cout << "Input files are: " << vm["input-file"].as< vector<string> >() << "\n";
+    	cout << "Input files are: " << vm["input-file"].as< vector<string> >() << endl;
 	}
 
  	return 0;
