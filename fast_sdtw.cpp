@@ -2,6 +2,8 @@
 using namespace boost;
 namespace po = boost::program_options;
 
+#include <kaldi-matrix.h>
+
 #include <iostream>
 #include <algorithm>
 #include <iterator>
@@ -15,16 +17,31 @@ ostream& operator<<(ostream& os, const vector<T>& v) {
 
 int main(int argc, char* argv[]) {
 	try {
-		int L;
+		int smoother_length, smoother_median, sdtw_width;
+		float quantize_threshold, smoother_median, sdtw_budget, sdtw_trim;
+		string measure;
 		
 		po::options_description desc("Allowed options");
 		desc.add_options()
 		("help", "produce help message")
-		("smoother_L", po::value<int>(&L)->default_value(7),
+		("measure", po::value<string>(&measure)->default_value("cosine"),
+		 "similarity measure, can be: euclidean, cosine, kl, dot")
+		("quantize", po::value<float>(&quantize_threshold)->default_value(0.5),
+		 "similarity quantization threshold")
+		("smoother-length", po::value<int>(&smoother_length)->default_value(7),
 		 "median smoother radius")
-		("verbose,v", po::value<int>()->implicit_value(1),
+		("smoother-median", po::value<float>(&smoother_median)->default_value(0.5),
+		 "median smoother mu parameter")
+		("SDTW-width", po::value<int>(&sdtw_width)->default_value(10),
+		 "Segmental DTW Bandwidth parameter")
+		("SDTW-budget", po::value<float>(&sdtw_budget)->default_value(10.0),
+		 "Segmental DTW distortion budget")
+		("SDTW-trim", po::value<float>(&sdtw_trim)->default_value(0.9),
+		 "Segmental DTW edge trim threshold")
+		("verbose", po::value<int>()->implicit_value(1),
 		 "enable verbosity (optionally specify level)")
-		("input-file", po::value< vector<string> >(), "input file");
+		("input-file", po::value< vector<string> >(),
+			"input file, assumed to be in kaldi binary matrix format");
 		
 		po::positional_options_description p;
 		p.add("input-file", -1);
@@ -55,6 +72,6 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-return 0;
+	return 0;
 
 }
