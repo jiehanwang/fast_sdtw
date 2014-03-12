@@ -1,9 +1,10 @@
-// sdtwbin/fast-sdtw.cpp
+// sdtwbin/fast-sdtw.cc
 
 // Author: David Harwath
 
 #include "base/kaldi-common.h"
 #include "feat/feature-functions.h" // do I need this?
+#include "sdtw/fast-pattern-searcher.h"
 #include "util/common-utils"
 #include "util/timer.h"
 
@@ -24,6 +25,7 @@ int main(int argc, char *argv[]) {
 		int32 sdtw_width = 10;
 		BaseFloat sdtw_budget = 15.0;
 		BaseFloat sdtw_trim = 0.2;
+		FastPatternSearcherConfig config;
 
 		config.Register(&po);
 		po.Register("distance-measure", &distance-measure,
@@ -54,6 +56,10 @@ int main(int argc, char *argv[]) {
 		std::string features_rspecifier = po.GetArg(1),
 								patterns_wspecifier = po.GetArg(2);
 
+		int32 num_err = 0;
+		vector<std::string> utt_ids;
+		vector< Matrix<BaseFloat> > utt_features;
+
 		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
 		for (; !feature_reader.Done(); feature_reader.Next()) {
 			std::string utt = feature_reader.Key();
@@ -64,10 +70,15 @@ int main(int argc, char *argv[]) {
 				num_err++;
 				continue;
 			}
-			// Store utt and features somewhere to be processed later
+			utt_ids.push_back(utt);
+			utt_features.push_back(features);
 		}
 
-		// Search between each pair of input files for patterns
+		FastPatternSearcher searcher(config);
+		searcher.search(utt_features, utt_ids, patterns_wspecifier);
+
+		double elapsed = timer.Elapsed();
+		KALDI_LOG << "Time taken: " << elapsed " seconds.";
 
 	} catch(const std::exception &e) {
 		std::cerr << e.what();
