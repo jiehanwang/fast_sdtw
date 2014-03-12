@@ -5,12 +5,36 @@
 #ifndef KALDI_SDTW_FAST_PATTERN_SEARCHER_H
 #define KALDI_SDTW_FAST_PATTERN_SEARCHER_H
 
+#include <map>
+#include <pair>
 #include <vector>
 
 #include "base/kaldi-common.h"
 #include "util/common-utils.h"
 
 namespace kaldi {
+
+struct Line {
+	std::pair<size_t, size_t> a;
+	std::pair<size_t, size_t> b;
+	Line(size_t x1, size_t y1, size_t x2, size_t y2);
+};
+
+struct Path {
+	std::vector< std::pair<size_t, size_t> > path_points;
+	vector<BaseFloat> similarities;
+};
+
+// Define the [][] operator for this class to make things easier.
+// Also include a method to iterate over the nonzero elements in O(k) time
+// where k is the number of nonzero entries.
+template<class T> class SparseMatrix {
+	public:
+		SparseMatrix() {};
+		~SparseMatrix() {};
+	private:
+		std::map< std::pair<size_t, size_t>, T > mat;
+};
 
 struct FastPatternSearcherConfig {
 	bool use_cosine;
@@ -83,11 +107,56 @@ public:
 	}
 
 	// TODO: Check that I am passing in the pattern_writer properly (pointer)
-	bool Search(const vector< Matrix<BaseFloat> &utt_features,
-							const vector<std::string> &utt_ids,
+	bool Search(const std::vector< Matrix<BaseFloat> &utt_features,
+							const std::vector<std::string> &utt_ids,
 							PatternStringWriter *pattern_writer);
 
 private:
+	void ComputeThresholdedSimilarityMatrix(
+		const Matrix<BaseFloat> &first_features,
+		const Matrix<BaseFloat> &second_features,
+		SparseMatrix<BaseFloat> *similarity_matrix);
+
+	void QuantizeSimilarityMatrix(
+		const SparseMatrix<BaseFloat> &similarity_matrix,
+		SparseMatrix<int32> *quantized_similarity_matrix);
+
+	void ApplyMedianSmootherToMatrix(
+		const SparseMatrix<int32> &input_matrix,
+		SparseMatrix<int32> *median_smoothed_matrix);
+
+	void ApplyGaussianBlurToMatrix(
+		const SparseMatrix<int32> &input_matrix,
+		SparseMatrix<BaseFloat> *blurred_matrix);
+
+	void ComputeDiagonalHoughTransform(
+		const SparseMatrix<BaseFloat> input_matrix,
+		std::vector<BaseFloat> *hough_transform);
+
+	void PickPeaksInVector(
+		const std::vector<BaseFloat> &input_vector,
+		const BaseFloat &peak_delta
+		std::vector<size_t> *peak_locations);
+
+	void ScanDiagsForLines(
+		const SparseMatrix<BaseFloat> &input_matrix,
+		const std::vector<int32> &diags_to_scan,
+		std::vector<Line> *line_locations);
+
+	void FilterBlockLines(
+		const SparseMatrix<BaseFloat> &similarity_matrix,
+		const std::vector<Line> &line_locations,
+		const BaseFloat &block_filter_threshold,
+		std::vector<Line> *filtered_line_locations);
+
+	void WarpLinesToPaths(
+		const SparseMatrix<BaseFloat> &similarity_matrix,
+		const &line_locations,
+		std::vector<Path> *sdtw_paths);
+
+	void WritePaths(const vector<Path> &sdtw_paths,
+									PatternStringWriter *writer);
+	
 	FastPatternSearcherConfig config_;
 };
 
