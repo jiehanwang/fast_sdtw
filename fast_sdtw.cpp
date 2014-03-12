@@ -1,77 +1,76 @@
-#include <boost/program_options.hpp>
-using namespace boost;
-namespace po = boost::program_options;
+// sdtwbin/fast-sdtw.cpp
 
-#include <kaldi-matrix.h>
+// Author: David Harwath
 
-#include <iostream>
-#include <algorithm>
-#include <iterator>
-using namespace std;
+#include "base/kaldi-common.h"
+#include "feat/feature-functions.h" // do I need this?
+#include "util/common-utils"
+#include "util/timer.h"
 
-template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v) {
-	copy(v.begin(), v.end(), ostream_iterator<T>(cout, " "));
-	return os;
-}
-
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
 	try {
-		int smoother_length, smoother_median, sdtw_width;
-		float quantize_threshold, smoother_median, sdtw_budget, sdtw_trim;
-		string measure;
-		
-		po::options_description desc("Allowed options");
-		desc.add_options()
-		("help", "produce help message")
-		("measure", po::value<string>(&measure)->default_value("cosine"),
-		 "similarity measure, can be: euclidean, cosine, kl, dot")
-		("quantize", po::value<float>(&quantize_threshold)->default_value(0.5),
-		 "similarity quantization threshold")
-		("smoother-length", po::value<int>(&smoother_length)->default_value(7),
-		 "median smoother radius")
-		("smoother-median", po::value<float>(&smoother_median)->default_value(0.5),
-		 "median smoother mu parameter")
-		("SDTW-width", po::value<int>(&sdtw_width)->default_value(10),
-		 "Segmental DTW Bandwidth parameter")
-		("SDTW-budget", po::value<float>(&sdtw_budget)->default_value(10.0),
-		 "Segmental DTW distortion budget")
-		("SDTW-trim", po::value<float>(&sdtw_trim)->default_value(0.9),
-		 "Segmental DTW edge trim threshold")
-		("verbose", po::value<int>()->implicit_value(1),
-		 "enable verbosity (optionally specify level)")
-		("input-file", po::value< vector<string> >(),
-			"input file, assumed to be in kaldi binary matrix format");
-		
-		po::positional_options_description p;
-		p.add("input-file", -1);
+		using namespace kaldi;
+		typedef kaldi::int32 int32;
 
-		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).
-		options(desc).positional(p).run(), vm);
-		po::notify(vm);
+		const char *usage =
+				"Perform fast pattern discovery.\n"
+				"Usage: fast-sdtw [options] features-rspecifier patterns-wspecifier";
+		ParseOptions po(usage);
+		Timer timer;
+		std::string distance_measure = "cosine";
+		BaseFloat quantize_threshold = 0.5;
+		int32 smoother_length = 7;
+		BaseFloat smoother_median = 0.5;
+		int32 sdtw_width = 10;
+		BaseFloat sdtw_budget = 15.0;
+		BaseFloat sdtw_trim = 0.2;
 
-		if (vm.count("help")) {
-			cout << "Usage: options_description [options]\n";
-			cout << desc;
-			return 0;
+		config.Register(&po);
+		po.Register("distance-measure", &distance-measure,
+				"Function to compute frame-wise distances. Must be one of: cosine, "
+				"euclidean, kl, dotproduct");
+		po.Register("quantize-threshold", &quantize_threshold,
+				"Frame similarities below this value are set to 0");
+		po.Register("smoother-length", &smoother_length,
+				"Context radius of the diagonal median smoothing filter. Total "
+				"filter length is twice this value plus one");
+		po.Register("smoother-median", &smoother_median,
+				"Mu parameter for the median smoothing filter");
+		po.Register("sdtw-width", &sdtw_width,
+				"S-DTW bandwidth parameter");
+		po.Register("sdtw-budget", &sdtw_budget,
+				"S-DTW distortion budget for each direction "
+				"(forwards and backwards)");
+		po.Register("sdtw-trim", &sdtw_trim,
+				"Trim frames from the ends of each warp path whose similarity "
+				"falls below this threshold");
+		po.Read(argc, argv);
+
+		if (po.NumArgs() != 2) {
+			po.PrintUsage();
+			exit(1);
 		}
-		if (vm.count("input-file"))
-		{
-			cout << "Input files are: "
-			<< vm["input-file"].as< vector<string> >() << "\n";
+
+		std::string features_rspecifier = po.GetArg(1),
+								patterns_wspecifier = po.GetArg(2);
+
+		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
+		for (; !feature_reader.Done(); feature_reader.Next()) {
+			std::string utt = feature_reader.Key();
+			Matrix<BaseFloat> features (feature_reader.Value());
+			feature_reader.FreeCurrent(); // Do I need this? What does this do?
+			if (feature.NumRows() == 0) {
+				KALDI_WARN << "Zero-length utterance: " << utt;
+				num_err++;
+				continue;
+			}
+			// Store utt and features somewhere to be processed later
 		}
-		if (vm.count("verbose")) {
-			cout << "Verbosity enabled. Level is " << vm["verbose"].as<int>()
-			<< "\n";
-		}
-		cout << "Total median smoother length is " << (2 * L + 1) << "\n";
+
+		// Search between each pair of input files for patterns
+
+	} catch(const std::exception &e) {
+		std::cerr << e.what();
+		return -1;
 	}
-	catch(std::exception& e) {
-		cout << e.what() << "\n";
-		return 1;
-	}
-
-	return 0;
-
 }
