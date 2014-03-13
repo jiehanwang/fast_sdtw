@@ -2,7 +2,10 @@
 
 // Author: David Harwath
 
+#include "base/kaldi-common.h"
 #include "sdtw/fast-pattern-searcher.h"
+#include "sdtw/sdtw-utils.h"
+#include "util/common-utils.h"
 
 namespace kaldi {
 
@@ -82,13 +85,28 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 void FastPatternSearcher::QuantizeSimilarityMatrix(
 	const SparseMatrix<BaseFloat> &similarity_matrix,
 	SparseMatrix<int32> *quantized_similarity_matrix) {
+	KALDI_ASSERT(quantized_similarity_matrix != NULL);
 
 }
 
 void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	const SparseMatrix<int32> &input_matrix,
 	SparseMatrix<int32> *median_smoothed_matrix) {
-
+	SparseMatrix<int32> median_counts;
+	const std::vector< std::pair<size_t, size_t> > nonzeros = 
+		input_matrix.GetNonzeroElements();
+	for (int i = 0; i < nonzeros.size(); ++i) {
+		size_t row = nonzeros[i].first;
+		size_t col = nonzeros[i].second;
+		// Increment each element within a diagonal L radius from (row,col) in
+		// median_counts by 1
+	}
+	const std::vector< std::pair<size_t, size_t> > nonzero_counts = 
+		median_counts.GetNonzeroElements();
+	for (int i = 0; i < nonzero_counts.size(); ++i) {
+		// If this count is above the median threshold, set the corresponding
+		// element of median_smoothed_matrix to a 1
+	}
 }
 
 void FastPatternSearcher::ApplyGaussianBlurToMatrix(

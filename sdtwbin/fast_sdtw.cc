@@ -20,15 +20,6 @@ int main(int argc, char *argv[]) {
 				"Usage: fast-sdtw [options] features-rspecifier patterns-wspecifier";
 		ParseOptions po(usage);
 		Timer timer;
-		// TODO: Figure out the best way to set distance_measure
-		DistanceMeasureType distance_measure = COSINE;
-		BaseFloat quantize_threshold = 0.5;
-		int32 smoother_length = 7;
-		BaseFloat smoother_median = 0.5;
-		int32 sdtw_width = 10;
-		BaseFloat sdtw_budget = 15.0;
-		BaseFloat sdtw_trim = 0.2;
-		FastPatternSearcherConfig config;
 
 		config.Register(&po);
 		po.Read(argc, argv);
@@ -42,8 +33,8 @@ int main(int argc, char *argv[]) {
 								patterns_wspecifier = po.GetArg(2);
 
 		int32 num_err = 0;
-		vector<std::string> utt_ids;
-		vector< Matrix<BaseFloat> > utt_features;
+		std::vector<std::string> utt_ids;
+		std::vector< Matrix<BaseFloat> > utt_features;
 
 		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
 		// TODO: Implement PatternStringWriter.

@@ -5,36 +5,13 @@
 #ifndef KALDI_SDTW_FAST_PATTERN_SEARCHER_H
 #define KALDI_SDTW_FAST_PATTERN_SEARCHER_H
 
-#include <map>
-#include <pair>
 #include <vector>
 
 #include "base/kaldi-common.h"
+#include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"
 
 namespace kaldi {
-
-struct Line {
-	std::pair<size_t, size_t> a;
-	std::pair<size_t, size_t> b;
-	Line(size_t x1, size_t y1, size_t x2, size_t y2);
-};
-
-struct Path {
-	std::vector< std::pair<size_t, size_t> > path_points;
-	vector<BaseFloat> similarities;
-};
-
-// Define the [][] operator for this class to make things easier.
-// Also include a method to iterate over the nonzero elements in O(k) time
-// where k is the number of nonzero entries.
-template<class T> class SparseMatrix {
-	public:
-		SparseMatrix() {};
-		~SparseMatrix() {};
-	private:
-		std::map< std::pair<size_t, size_t>, T > mat;
-};
 
 struct FastPatternSearcherConfig {
 	bool use_cosine;
@@ -47,16 +24,12 @@ struct FastPatternSearcherConfig {
 	int32 sdtw_width;
 	BaseFloat sdtw_budget;
 	BaseFloat sdtw_trim;
-	FastPatternSearcherConfig():	use_cosine(true),
-																use_dotprod(false),
-																use_euclidean(false),
-																use_kl(false),
-																quantize_threshold(0.5),
-																smoother_length(7),
-																smoother_median(0.5),
-																sdtw_width(10),
-																sdtw_budget(7.0),
-																sdtw_trim(0.1) {}
+
+	FastPatternSearcherConfig(): use_cosine(true), use_dotprod(false),
+		use_euclidean(false), use_kl(false), quantize_threshold(0.5),
+		smoother_length(7), smoother_median(0.5), sdtw_width(10),
+		sdtw_budget(7.0), sdtw_trim(0.1) {}
+
 	void Register(OptionsItf *po) {
 		po.Register("use-cosine", &use_cosine,
 				"Use cosine similarity between frames. Behavior may be "
@@ -156,7 +129,7 @@ private:
 
 	void WritePaths(const vector<Path> &sdtw_paths,
 									PatternStringWriter *writer);
-	
+
 	FastPatternSearcherConfig config_;
 };
 
