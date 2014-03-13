@@ -43,8 +43,30 @@ template<class T> class SparseMatrix {
 
 		std::vector< std::pair<size_t, size_t> > GetNonzeroElements();
 
+		void Clear();
+
+		void Clamp(const BaseFloat &epsilon);
+
+		T Get(const std::pair<size_t, size_t> &coordinate) const;
+
+		T GetSafe(const std::pair<size_t, size_t> &coordinate) const;
+
+		std::pair<size_t, size_t> GetSize() const;
+
+		bool SetSize(const std::pair<size_t, size_t> &size);
+
+		bool Set(const std::pair<size_t, size_t> &coordinate,
+				 const &T value);
+
+		bool SetSafe(const std::pair<size_t, size_t> &coordinate,
+					 const T &value);
+
+		bool IncrementSafe(const std::pair<size_t, size_t> &coordinate,
+						   const T &increment);
+
 	private:
-		std::map< std::pair<size_t, size_t>, T > mat;
+		std::pair<size_t, size_t> size_;
+		std::map< std::pair<size_t, size_t>, T > mat_;
 };
 
 }  // end namespace kaldi

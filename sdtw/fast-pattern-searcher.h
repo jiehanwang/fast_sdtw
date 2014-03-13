@@ -86,46 +86,63 @@ public:
 
 private:
 	void ComputeThresholdedSimilarityMatrix(
-		const Matrix<BaseFloat> &first_features,
-		const Matrix<BaseFloat> &second_features,
-		SparseMatrix<BaseFloat> *similarity_matrix);
+				const Matrix<BaseFloat> &first_features,
+				const Matrix<BaseFloat> &second_features,
+				SparseMatrix<BaseFloat> *similarity_matrix);
 
-	void QuantizeSimilarityMatrix(
-		const SparseMatrix<BaseFloat> &similarity_matrix,
-		SparseMatrix<int32> *quantized_similarity_matrix);
+	// Applies a fixed quantization threshold to the values of the input
+	// matrix, writing the quantized (1 or 0 valued) matrix to the provided
+	// output matrix. Does not check that the matrix pointed to by
+	// quantized_matrix is initially empty, nor does it bother to clear it. For
+	// predictable behavior, supply an empty matrix.
+	void QuantizeMatrix(
+				const SparseMatrix<BaseFloat> &input_matrix,
+				const BaseFloat &quantization_threshold,
+				SparseMatrix<int32> *quantized_matrix);
 
+	// Applies a diagonal median smoother to an (assumed) binary input matrix
+	// and writes the output to the provided output matrix. Does not check
+	// that the provided output matrix is initially all zeros, and does not
+	// clear its initial values. For predictable behavior, make sure that
+	// the matrix pointed to by median_smoothed_matrix is empty!
 	void ApplyMedianSmootherToMatrix(
-		const SparseMatrix<int32> &input_matrix,
-		SparseMatrix<int32> *median_smoothed_matrix);
+				const SparseMatrix<int32> &input_matrix,
+				const int32 &smoother_length,
+				const BaseFloat &smoother_median,
+				SparseMatrix<int32> *median_smoothed_matrix);
 
 	void ApplyGaussianBlurToMatrix(
-		const SparseMatrix<int32> &input_matrix,
-		SparseMatrix<BaseFloat> *blurred_matrix);
+				const SparseMatrix<int32> &input_matrix,
+				const int32 &kernel_width,
+				SparseMatrix<BaseFloat> *blurred_matrix);
 
 	void ComputeDiagonalHoughTransform(
-		const SparseMatrix<BaseFloat> input_matrix,
-		std::vector<BaseFloat> *hough_transform);
+				const SparseMatrix<BaseFloat> input_matrix,
+				std::vector<BaseFloat> *hough_transform);
 
 	void PickPeaksInVector(
-		const std::vector<BaseFloat> &input_vector,
-		const BaseFloat &peak_delta
-		std::vector<size_t> *peak_locations);
+				const std::vector<BaseFloat> &input_vector,
+				const BaseFloat &peak_delta
+				std::vector<size_t> *peak_locations);
 
 	void ScanDiagsForLines(
-		const SparseMatrix<BaseFloat> &input_matrix,
-		const std::vector<int32> &diags_to_scan,
-		std::vector<Line> *line_locations);
+				const SparseMatrix<BaseFloat> &input_matrix,
+				const std::vector<int32> &diags_to_scan,
+				std::vector<Line> *line_locations);
 
 	void FilterBlockLines(
-		const SparseMatrix<BaseFloat> &similarity_matrix,
-		const std::vector<Line> &line_locations,
-		const BaseFloat &block_filter_threshold,
-		std::vector<Line> *filtered_line_locations);
+				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const std::vector<Line> &line_locations,
+				const BaseFloat &block_filter_threshold,
+				std::vector<Line> *filtered_line_locations);
 
 	void WarpLinesToPaths(
-		const SparseMatrix<BaseFloat> &similarity_matrix,
-		const &line_locations,
-		std::vector<Path> *sdtw_paths);
+				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const std::vector<Line> &line_locations,
+				const int32 &sdtw_width,
+				const BaseFloat &sdtw_budget,
+				const BaseFloat &sdtw_trim,
+				std::vector<Path> *sdtw_paths);
 
 	void WritePaths(const vector<Path> &sdtw_paths,
 									PatternStringWriter *writer);
