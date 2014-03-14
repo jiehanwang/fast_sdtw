@@ -162,6 +162,9 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 	KALDI_ASSERT(kernel_radius > 0);
 	blurred_matrix->Clear();
 	blurred_matrix->SetSize(input_matrix.GetSize());
+	// Creates a 2D array to hold our little Gaussian image kernel
+	// Kernel radius specifies how many pixels the Gaussian spans away from the
+	// center. So a radius of 1 means that the total size is a 3x3 square.
 	const size_t kernel_width = 2 * kernel_radius + 1;	
 	BaseFloat *kernel = new BaseFloat[kernel_width * kernel_width];
 	BaseFloat squareradius = kernel_radius * kernel_radius;
@@ -173,8 +176,30 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 				exp(-1 * squaredist / (2 * squareradius));
 		}
 	}
-
-// TODO: finish this method.
+	// Convolves the input matrix with the Gaussian image kernel.
+	// Iterates through the nonzero elements of the input matrix, and for each
+	// nonzero coordinate plops down a Gaussian (weighted by the value of the
+	// nonzero element) at the corresponding location in blurred_matrix
+	const std::vector< std::pair<size_t, size_t> > nonzeros = 
+		input_matrix.GetNonzeroElements();
+	for (int i = 0; i < nonzeros.size(); ++i) { 
+		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
+		for (kernel_row = 0; kernel_row < kernel_width; ++kernel_row) {
+			for (kernel_col = 0; kernel_col < kernel_width; ++ kernel_col) {
+				const BaseFloat &kernel_value =
+					kernel[kernel_row * kernel_width + kernel_col];
+				const BaseFloat &matrix_value = input_matrix.Get(coordinate);
+				const size_t increment_row =
+					coordinate.first + kernel_row - kernel_radius;
+				const size_t increment_col =
+					coordinate.second + kernel_col - kernel_radius;
+				const std::pair<size_t, size_t> increment_coordinate =
+					std::make_pair<size_t, size_t>(increment_row, increment_col);
+				blurred_matrix->IncrementSafe(increment_coordinate,
+																			matrix_value * kernel_value);
+			}
+		}
+	}
 	delete [] kernel;
 }
 
@@ -190,20 +215,73 @@ void FastPatternSearcher::ComputeDiagonalHoughTransform(
 		const size_t M = input_matrix.NumRows();
 		const size_t N = input_matrix.NumCols();
 		hough_transform->resize(M + N - 1);
+		// Iterate over the nonzero elements of the matrix, figure out which
+		// diagonal the coordinate resides in, and then increment the
+		// corresponding index of the hough_transform vector by the value of the
+		// matrix at said coordinate.
+		// Based on the way we have defined the 0th diagonal (bottom left corner
+		// of the input_matrix) and the (M + N - 2)th diagonal (upper right corner
+		// of the input matrix), the index of the diagonal at coordinate
+		// (row, col) is given by (col - row + M - 1).
 		const std::vector< std::pair<size_t, size_t> > nonzeros = 
 			input_matrix.GetNonzeroElements();
 		for (int i = 0; i < nonzeros.size(); ++i) {
-// TODO: finish this method.
+			const std::pair<size_t, size_t> &coordinate = nonzeros[i];
+			const int diag = coordinate.second - coordinate.first + M - 1;
+			KALDI_ASSERT(diag >= 0 && diag <= (M + N - 1));
+			hough_transform[diag] += input_matrix.Get(coordinate);
 		}
 }
 
+// This function uses the peakdet algorithm by Eli Billauer (public domain).
 void FastPatternSearcher::PickPeaksInVector(
 				const vector<BaseFloat> &input_vector,
 				const BaseFloat &peak_delta
 				std::vector<int32> *peak_locations) {
 	KALDI_ASSERT(peak_locations != NULL);
+	KALDI_ASSERT(input_vector.size() > 0);
 	peak_locations->clear();
-// TODO: finish this method.
+	BaseFloat minvalue = input_vector[0];
+	BaseFloat maxvalue = input_vector[0];
+	for (int i = 0; i < input_vector.size(); ++i) {
+		if (input_vector[i] < minvalue) {
+			minvalue = input_vector[i];
+		}
+		if (input_vector[i] > maxvalue) {
+			maxvalue = input_vector[i];
+		}
+	}
+	const BaseFloat delta = peak_delta * (maxvalue - minvalue);
+	BaseFloat mx = minvalue - 1;
+	BaseFloat mn = maxvalue + 1;
+	int mxidx = -1;
+	int mnidx = -1;
+	bool findMax = true;
+	for (int i = 0; i < input_vector.size(); ++i) {
+		const BaseFloat &val = input_vector[i];
+		if (val > mx) {
+			mx = val;
+			mxidx = i;
+		}
+		if (val < mn) {
+			mn = val;
+			mnidx = i;
+		}
+		if (findMax) {
+			if (val < (mx - delta)) {
+				peak_locations.push_back(mxidx);
+				mn = val;
+				mnidx = i;
+				findMax = false;
+			}
+		} else {
+			if (val > (mn + delta)) {
+				mx = val;
+				mxidx = i;
+				findMax = true;
+			}
+		}
+	}
 }
 
 void FastPatternSearcher::ScanDiagsForLines(
@@ -222,7 +300,11 @@ void FastPatternSearcher::FilterBlockLines(
 				std::vector<Line> *filtered_line_locations) {
 	KALDI_ASSERT(filtered_line_locations != NULL);
 	filtered_line_locations->clear();
-// TODO: finish this method.
+	// The idea here is pretty simple. Given a line from (start_row, start_col)
+	// to (end_row, end_col), compute the average similarity of the rectangle
+	// enclosing the line. If the average similarity exceeds the specified
+	// threshold, then do not include the line in the filtered list.
+	// TODO: finish this method.
 }
 
 void FastPatternSearcher::WarpLinesToPaths(
