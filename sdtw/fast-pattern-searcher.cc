@@ -2,6 +2,10 @@
 
 // Author: David Harwath
 
+#include <algorithm>
+#include <pair>
+#include <vector>
+
 #include "base/kaldi-common.h"
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
@@ -262,24 +266,20 @@ void FastPatternSearcher::PickPeaksInVector(
 		if (val > mx) {
 			mx = val;
 			mxidx = i;
-		}
+		} 
 		if (val < mn) {
 			mn = val;
 			mnidx = i;
 		}
-		if (findMax) {
-			if (val < (mx - delta)) {
+		if (findMax && val < (mx - delta)) {
 				peak_locations.push_back(mxidx);
 				mn = val;
 				mnidx = i;
 				findMax = false;
-			}
-		} else {
-			if (val > (mn + delta)) {
+		} else if (!findMax && val > (mn + delta)) {
 				mx = val;
 				mxidx = i;
 				findMax = true;
-			}
 		}
 	}
 }
@@ -305,6 +305,29 @@ void FastPatternSearcher::FilterBlockLines(
 	// enclosing the line. If the average similarity exceeds the specified
 	// threshold, then do not include the line in the filtered list.
 	// TODO: finish this method.
+	for (int i = 0; i < line_locations.size(); ++i) {
+		const Line &line = line_locations[i];
+		const std::pair<size_t, size_t> start = line.start;
+		const std::pair<size_t, size_t> end = line.end;
+		// I don't assume that start is the upper leftmost point of the line
+		const size_t row_min = std::min(start.first, end.first);
+		const size_t row_max = std::max(start.first, end.first);
+		const size_t col_min = std::min(start.second, end.second);
+		const size_t col_max = std::max(start.second, end.second);
+		BaseFloat blocksum = 0.0;
+		for (size_t row = row_min; row <= row_max; ++row) {
+			for (size_t col = col_min; col <= col_max; ++col) {
+				blocksum += similarity_matrix.GetSafe(
+					std::make_pair<size_t, size_t>(row, col));
+			}
+		}
+		int32 num_pixels = (row_max - row_min) * (col_max - col_min);
+		KALDI_ASSERT(num_pixels > 0);
+		if ((blocksum / static_cast<BaseFloat>(num_pixels)) < 
+			block_filter_threshold) {
+			filtered_line_locations->push_back(line);
+		}
+	}
 }
 
 void FastPatternSearcher::WarpLinesToPaths(
