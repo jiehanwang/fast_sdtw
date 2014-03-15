@@ -290,7 +290,36 @@ void FastPatternSearcher::ScanDiagsForLines(
 				std::vector<Line> *line_locations) {
 	KALDI_ASSERT(line_locations != NULL);
 	line_locations->clear();
-// TODO: finish this method.
+	const size_t M = input_matrix.NumRows();
+	const size_t N = input_matrix.NumCols();
+	// The idea here is simple; for each diagonal we want to scan, we simply
+	// iterate over the elements in that diagonal (in order), looking for 
+	// continuous nonzero regions.
+	for (int i = 0; i < diags_to_scan.size(); ++i) {
+		size_t row = -1;
+		size_t col = -1;
+		// the diagonal index is equal to (col - row + M - 1), so we also have
+		// that row - col = M - 1 - index. Assuming that we wish to start
+		// scanning along either the top or left edge of the matrix, one of
+		// row or col must be zero, and neither can be negative. So, applying
+		// these constraints to the equation above allows us to uniquely solve
+		// for the starting point for our scan.
+		int diff = M - 1 - diags_to_scan[i];
+		if (diff > 0) {
+			row = diff;
+			col = 0;
+		} else if (diff < 0) {
+			row = 0;
+			col = -1 * diff;
+		} else if (diff == 0) {
+			row = 0;
+			col = 0;
+		}
+		for(; (row < M && col < N); ++row, ++col;) {
+			// TODO: finish this method.
+		}
+	}
+
 }
 
 void FastPatternSearcher::FilterBlockLines(
