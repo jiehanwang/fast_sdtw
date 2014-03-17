@@ -296,8 +296,8 @@ void FastPatternSearcher::ScanDiagsForLines(
 	// iterate over the elements in that diagonal (in order), looking for 
 	// continuous nonzero regions.
 	for (int i = 0; i < diags_to_scan.size(); ++i) {
-		size_t row = -1;
-		size_t col = -1;
+		size_t row;
+		size_t col;
 		// the diagonal index is equal to (col - row + M - 1), so we also have
 		// that row - col = M - 1 - index. Assuming that we wish to start
 		// scanning along either the top or left edge of the matrix, one of
@@ -310,13 +310,26 @@ void FastPatternSearcher::ScanDiagsForLines(
 			col = 0;
 		} else if (diff < 0) {
 			row = 0;
-			col = -1 * diff;
-		} else if (diff == 0) {
+			col = -1 * diff; // guaranteed to be positive, but is this safe?
+		} else { // diff == 0
 			row = 0;
 			col = 0;
 		}
+		KALDI_ASSERT(row >= 0 && col >= 0);
+		bool prev_nonzero = false
+		size_t line_start_row;
+		size_t line_start_col;
 		for(; (row < M && col < N); ++row, ++col;) {
-			// TODO: finish this method.
+			const BaseFloat value = input_matrix.Get();
+			if (!prev_nonzero && value > 0.0) {
+				prev_nonzero = true;
+				line_start_row = row;
+				line_start_col = col;
+			} else if (prev_nonzero && value <= 0) {
+				prev_nonzero = false;
+				const Line line(line_start_row, line_start_col, row, col);
+				line_locations->push_back(line);
+			}
 		}
 	}
 
