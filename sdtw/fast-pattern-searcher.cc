@@ -22,11 +22,11 @@ FastPatternSearcher::FastPatternSearcher(
 bool FastPatternSearcher::Search(
 				const std::vector< Matrix<BaseFloat> &utt_features,
 				const std::vector<std::string> &utt_ids,
-				PatternStringWriter *pattern_writer) {
+				PatternStringWriter *pattern_writer) const {
 
 	KALDI_ASSERT(utt_features.size() == utt_ids.size());
 
-	// Algorithm flow:
+	// Algorithm steps:
 	// For each pair of matrices in utt_features:
 	//		1. Compute similarity matrix
 	//		2. Quantize similarity matrix
@@ -52,6 +52,7 @@ bool FastPatternSearcher::Search(
 			const std::string second_utt = utt_ids[j];
 			//TODO: Implement these methods as well as SparseMatrix, Line, Path,
 			// and PatternStringWriter
+			//TODO: Unit tests for everything!
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
@@ -88,7 +89,7 @@ bool FastPatternSearcher::Search(
 void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
-				SparseMatrix<BaseFloat> *similarity_matrix) {
+				SparseMatrix<BaseFloat> *similarity_matrix) const {
 	KALDI_ASSERT(similarity_matrix != NULL);
 	similarity_matrix->Clear();
 	const std::pair<size_t, size_t> size =
@@ -101,7 +102,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 void FastPatternSearcher::QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				const BaseFloat &quantization_threshold,
-				SparseMatrix<int32> *quantized_matrix) {
+				SparseMatrix<int32> *quantized_matrix) const {
 	KALDI_ASSERT(quantized_similarity_matrix != NULL);
 	quantized_matrix->Clear();
 	quantized_matrix->SetSize(input_matrix.GetSize());
@@ -119,7 +120,7 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 				const SparseMatrix<int32> &input_matrix,
 				const int32 &smoother_length,
 				const BaseFloat &smoother_median,
-				SparseMatrix<int32> *median_smoothed_matrix) {
+				SparseMatrix<int32> *median_smoothed_matrix) const {
 	KALDI_ASSERT(median_smoothed_matrix != NULL);
 	median_smoothed_matrix->Clear();
 	median_smoothed_matrix->SetSize(input_matrix.GetSize());
@@ -161,7 +162,7 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 				const SparseMatrix<int32> &input_matrix,
 				const size_t &kernel_radius,
-				SparseMatrix<BaseFloat> *blurred_matrix) {
+				SparseMatrix<BaseFloat> *blurred_matrix) const {
 	KALDI_ASSERT(blurred_matrix != NULL);
 	KALDI_ASSERT(kernel_radius > 0);
 	blurred_matrix->Clear();
@@ -209,7 +210,7 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 
 void FastPatternSearcher::ComputeDiagonalHoughTransform(
 				const SparseMatrix<BaseFloat> input_matrix,
-				std::vector<BaseFloat> *hough_transform) {
+				std::vector<BaseFloat> *hough_transform) const {
 	KALDI_ASSERT(hough_transform != NULL);
 	hough_transform->clear();
 		// For an M by N matrix, there will be (M + N - 1) total diagonals.
@@ -241,7 +242,7 @@ void FastPatternSearcher::ComputeDiagonalHoughTransform(
 void FastPatternSearcher::PickPeaksInVector(
 				const vector<BaseFloat> &input_vector,
 				const BaseFloat &peak_delta
-				std::vector<int32> *peak_locations) {
+				std::vector<int32> *peak_locations) const {
 	KALDI_ASSERT(peak_locations != NULL);
 	KALDI_ASSERT(input_vector.size() > 0);
 	peak_locations->clear();
@@ -287,7 +288,7 @@ void FastPatternSearcher::PickPeaksInVector(
 void FastPatternSearcher::ScanDiagsForLines(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				const std::vector<int32> &diags_to_scan,
-				std::vector<Line> *line_locations) {
+				std::vector<Line> *line_locations) const {
 	KALDI_ASSERT(line_locations != NULL);
 	line_locations->clear();
 	const size_t M = input_matrix.NumRows();
@@ -332,14 +333,13 @@ void FastPatternSearcher::ScanDiagsForLines(
 			}
 		}
 	}
-
 }
 
 void FastPatternSearcher::FilterBlockLines(
 				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
-				std::vector<Line> *filtered_line_locations) {
+				std::vector<Line> *filtered_line_locations) const {
 	KALDI_ASSERT(filtered_line_locations != NULL);
 	filtered_line_locations->clear();
 	// The idea here is pretty simple. Given a line from (start_row, start_col)
@@ -372,17 +372,99 @@ void FastPatternSearcher::FilterBlockLines(
 	}
 }
 
+void FastPatternSearcher::SDTWWarp(
+	const SparseMatrix<BaseFloat> &similarity_matrix,
+	const std::pair<size_t, size_t> &start_point,
+	const std::pair<size_t, size_t> &end_point,
+ 	Path *path_from_midpoint) const {
+	
+}
+
+void FastPatternSearcher::MergeAndTrimPaths(
+	const Path &first_half, const Path &second_half, Path *result) const {
+	KALDI_ASSERT(result != NULL);
+	result->clear();
+	KALDI_ASSERT(first_half.path_points.size()
+				 == first_half.similarities.size());
+	KALDI_ASSERT(second_half.path_points.size()
+				 == second_half.similarities.size());
+	std::vector<std::pair<std::pair<size_t, size_t>, BaseFloat> > path;
+	BaseFloat first_distortion_eaten = 0.0;
+	for (int i = first_half.path_points.size() - 1; i >= 0; --i) {
+		const std::pair<size_t, size_t> &point = first_half.path_points[i];
+		const BaseFloat &similarity = first_half.similarities[i];
+		BaseFloat new_distortion = first_distortion_eaten + (1 - similarity);
+		if (new_distortion <= config_.sdtw_budget) {
+			first_distortion_eaten = new_distortion;
+			path.push_back(std::make_pair<std::pair<size_t, size_t>, BaseFloat>(
+					point, similarity));
+		} else {
+			break;
+		}
+	}
+	for (int i = path.size() - 1; i >= 0; --i) {
+		const BaseFloat &similarity = path[i].second;
+		if (similarity < config_.sdtw_trim) {
+			path.pop_back();
+		} else {
+			break;
+		}
+	}
+	std::reverse(path.begin(), path.end());
+	BaseFloat second_distortion_eaten = 0.0;
+	for (int i = second_half.path_points.size() - 1; i >= 0; --i) {
+		const std::pair<size_t, size_t> &point = second_half.path_points[i];
+		const BaseFloat &similarity = first_half.similarities[i];
+		BaseFloat new_distortion = second_distortion_eaten + (1 - similarity);
+		if (new_distortion <= config_.sdtw_budget) {
+			second_distortion_eaten = new_distortion;
+			path.push_back(std::make_pair<std::pair<size_t, size_t>, BaseFloat> (
+				point, similarity));
+		} else {
+			break;
+		}
+	}
+	for (int i = path.size() - 1; i >= 0; --i) {
+		const BaseFloat &similarity = path[i].second;
+		if (similarity < config_.sdtw_trim) {
+			path.pop_back();
+		} else {
+			break;
+		}
+	}
+	for (int i = 0; i < path.size(); ++i) {
+		result->push_back(path[i].first);
+		result->push_back(path[i].second);
+	}
+}
+
 void FastPatternSearcher::WarpLinesToPaths(
 				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
-				std::vector<Path> *sdtw_paths) {
+				std::vector<Path> *sdtw_paths) const {
 	KALDI_ASSERT(sdtw_paths != NULL);
 	sdtw_paths->clear();
-// TODO: finish this method.
+// TODO: Implement the helper function SDTWWarp
+	for (int i = 0; i < line_locations.size(); ++i) {
+		const Line &this_line = line_locations[i];
+		const size_t midpoint_row = (this_line.start.first +
+									 this_line.end.first) / 2;
+		const size_t midpoint_col = (this_line.start.second +
+									 this_line.end.second) / 2;
+		const pair<size_t, size_t> midpoint =
+			make_pair<size_t, size_t>(midpoint_row, midpoint_col);
+		Path path_to_midpoint;
+		Path path_from_midpoint;
+		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
+		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
+		Path trimmed_path;
+		MergeAndTrimPaths(path_to_midpoint, path_from_midpoint, &trimmed_path);
+		sdtw_paths->push_back(trimmed_path);
+	}
 }
 
 void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
-																		 PatternStringWriter *writer) {
+									 PatternStringWriter *writer) const {
 	KALDI_ASSERT(writer != NULL);
 // TODO: finish this method.
 }

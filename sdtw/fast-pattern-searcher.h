@@ -72,7 +72,7 @@ public:
 		config_ = config;
 	}
 
-	FastPatternSearcherConfig GetOptions() {
+	FastPatternSearcherConfig GetOptions() const {
 		return config_;
 	}
 
@@ -82,13 +82,13 @@ public:
 	// TODO: Check that I am passing in the pattern_writer properly (pointer)
 	bool Search(const std::vector< Matrix<BaseFloat> &utt_features,
 							const std::vector<std::string> &utt_ids,
-							PatternStringWriter *pattern_writer);
+							PatternStringWriter *pattern_writer) const;
 
 private:
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
-				SparseMatrix<BaseFloat> *similarity_matrix);
+				SparseMatrix<BaseFloat> *similarity_matrix) const;
 
 	// Applies a fixed quantization threshold to the values of the input
 	// matrix, writing the quantized (1 or 0 valued) matrix to the provided
@@ -98,7 +98,7 @@ private:
 	void QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				const BaseFloat &quantization_threshold,
-				SparseMatrix<int32> *quantized_matrix);
+				SparseMatrix<int32> *quantized_matrix) const;
 
 	// Applies a diagonal median smoother to an (assumed) binary input matrix
 	// and writes the output to the provided output matrix. Does not check
@@ -109,32 +109,40 @@ private:
 				const SparseMatrix<int32> &input_matrix,
 				const int32 &smoother_length,
 				const BaseFloat &smoother_median,
-				SparseMatrix<int32> *median_smoothed_matrix);
+				SparseMatrix<int32> *median_smoothed_matrix) const;
 
 	void ApplyGaussianBlurToMatrix(
 				const SparseMatrix<int32> &input_matrix,
 				const int32 &kernel_width,
-				SparseMatrix<BaseFloat> *blurred_matrix);
+				SparseMatrix<BaseFloat> *blurred_matrix) const;
 
 	void ComputeDiagonalHoughTransform(
 				const SparseMatrix<BaseFloat> input_matrix,
-				std::vector<BaseFloat> *hough_transform);
+				std::vector<BaseFloat> *hough_transform) const;
 
 	void PickPeaksInVector(
 				const std::vector<BaseFloat> &input_vector,
 				const BaseFloat &peak_delta
-				std::vector<size_t> *peak_locations);
+				std::vector<size_t> *peak_locations) const;
 
 	void ScanDiagsForLines(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				const std::vector<int32> &diags_to_scan,
-				std::vector<Line> *line_locations);
+				std::vector<Line> *line_locations) const;
 
 	void FilterBlockLines(
 				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
-				std::vector<Line> *filtered_line_locations);
+				std::vector<Line> *filtered_line_locations) const;
+
+	void SDTWWarp(const SparseMatrix<BaseFloat> &similarity_matrix,
+								const std::pair<size_t, size_t> &start_point,
+				  			const std::pair<size_t, size_t> &end_point,
+				  			Path *path_from_midpoint) const;
+
+	void MergeAndTrimPaths(const Path &first_half, const Path &second_half,
+						   Path *result) const;
 
 	void WarpLinesToPaths(
 				const SparseMatrix<BaseFloat> &similarity_matrix,
@@ -142,10 +150,10 @@ private:
 				const int32 &sdtw_width,
 				const BaseFloat &sdtw_budget,
 				const BaseFloat &sdtw_trim,
-				std::vector<Path> *sdtw_paths);
+				std::vector<Path> *sdtw_paths) const;
 
 	void WritePaths(const vector<Path> &sdtw_paths,
-									PatternStringWriter *writer);
+									PatternStringWriter *writer) const;
 
 	FastPatternSearcherConfig config_;
 };
