@@ -346,7 +346,6 @@ void FastPatternSearcher::FilterBlockLines(
 	// to (end_row, end_col), compute the average similarity of the rectangle
 	// enclosing the line. If the average similarity exceeds the specified
 	// threshold, then do not include the line in the filtered list.
-	// TODO: finish this method.
 	for (int i = 0; i < line_locations.size(); ++i) {
 		const Line &line = line_locations[i];
 		const std::pair<size_t, size_t> start = line.start;
@@ -375,6 +374,7 @@ void FastPatternSearcher::SDTWWarp(
 	const SparseMatrix<BaseFloat> &similarity_matrix,
 	const std::pair<size_t, size_t> &start_point,
 	const std::pair<size_t, size_t> &end_point, Path *path) const {
+	//TODO: finish this method.
 	const BaseFloat BIG = 1e20;
 	enum DTW_move_t {INSERT, MATCH, DELETE};
 	std::pair<size_t, size_t> input_size = similarity_matrix.GetSize();

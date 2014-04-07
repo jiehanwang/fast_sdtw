@@ -38,14 +38,17 @@ struct Path {
 // where k is the number of nonzero entries.
 template<class T> class SparseMatrix {
 	public:
-		SparseMatrix() {};
+		SparseMatrix() : mat_() {
+			size_ = std::make_pair<size_t, size_t>(0, 0);
+		}
+
 		~SparseMatrix() {};
 
 		std::vector< std::pair<size_t, size_t> > GetNonzeroElements();
 
 		void Clear();
 
-		void Clamp(const BaseFloat &epsilon);
+		void Clamp(const T &epsilon);
 
 		T Get(const std::pair<size_t, size_t> &coordinate) const;
 
@@ -73,7 +76,7 @@ template<class T> class SparseMatrix {
 						   				 const T &increment);
 
 		bool IncrementSafe(const size_t &row, const size_t &col,
-											 const T &increment)
+											 const T &increment);
 
 	private:
 		std::pair<size_t, size_t> size_;
