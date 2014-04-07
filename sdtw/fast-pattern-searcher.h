@@ -138,8 +138,7 @@ private:
 
 	void SDTWWarp(const SparseMatrix<BaseFloat> &similarity_matrix,
 								const std::pair<size_t, size_t> &start_point,
-				  			const std::pair<size_t, size_t> &end_point,
-				  			Path *path_from_midpoint) const;
+				  			const std::pair<size_t, size_t> &end_point, Path *path) const;
 
 	void MergeAndTrimPaths(const Path &first_half, const Path &second_half,
 						   Path *result) const;

@@ -49,20 +49,31 @@ template<class T> class SparseMatrix {
 
 		T Get(const std::pair<size_t, size_t> &coordinate) const;
 
+		T Get(const size_t &row, const size_t &col) const;
+
 		T GetSafe(const std::pair<size_t, size_t> &coordinate) const;
+
+		T GetSafe(const size_t &row, const size_t &col) const;
 
 		std::pair<size_t, size_t> GetSize() const;
 
 		bool SetSize(const std::pair<size_t, size_t> &size);
 
 		bool Set(const std::pair<size_t, size_t> &coordinate,
-				 const &T value);
+				 		 const T &value);
+
+		bool Set(const size_t &row, const size_t &col, const T &value);
 
 		bool SetSafe(const std::pair<size_t, size_t> &coordinate,
-					 const T &value);
+					 			 const T &value);
+
+		bool SetSafe(const size_t &row, const size_t &col, const T &value);
 
 		bool IncrementSafe(const std::pair<size_t, size_t> &coordinate,
-						   const T &increment);
+						   				 const T &increment);
+
+		bool IncrementSafe(const size_t &row, const size_t &col,
+											 const T &increment)
 
 	private:
 		std::pair<size_t, size_t> size_;

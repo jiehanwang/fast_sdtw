@@ -148,7 +148,7 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	// Precomputes the count threshold for median smoothing. These casts
 	// *should* work, but definitely needs to be tested.
 	const int32 threshold = static_cast<int32>(
-			smoother_median * static_cast<BaseFloat>(2 * smoother_length + 1));
+		2 * smoother_median * (smoother_length + 1));
 	for (int i = 0; i < nonzero_counts.size(); ++i) {
 		// If this count is above the median threshold, sets the corresponding
 		// element of median_smoothed_matrix to a 1
@@ -365,8 +365,7 @@ void FastPatternSearcher::FilterBlockLines(
 		}
 		int32 num_pixels = (row_max - row_min) * (col_max - col_min);
 		KALDI_ASSERT(num_pixels > 0);
-		if ((blocksum / static_cast<BaseFloat>(num_pixels)) < 
-			block_filter_threshold) {
+		if ((blocksum / num_pixels) < block_filter_threshold) {
 			filtered_line_locations->push_back(line);
 		}
 	}
@@ -375,9 +374,26 @@ void FastPatternSearcher::FilterBlockLines(
 void FastPatternSearcher::SDTWWarp(
 	const SparseMatrix<BaseFloat> &similarity_matrix,
 	const std::pair<size_t, size_t> &start_point,
-	const std::pair<size_t, size_t> &end_point,
- 	Path *path_from_midpoint) const {
-	
+	const std::pair<size_t, size_t> &end_point, Path *path) const {
+	const BaseFloat BIG = 1e20;
+	enum DTW_move_t {INSERT, MATCH, DELETE};
+	std::pair<size_t, size_t> input_size = similarity_matrix.GetSize();
+	std::pair<size_t, size_t> dtw_size = make_pair(input_size.first + 1,
+																								 input_size.second + 1);
+	SparseMatrix<BaseFloat> path_distances;
+	path_distances.SetSize(dtw_size);
+	SparseMatrix<DTW_move_t> path_decisions;
+	path_decisions.SetSize(dtw_size);
+	path_distances.SetSafe(std::make_pair(0,0), 0.0);
+	for (size_t row = 0; row < std::min(matrix_size.first, config_.sdtw_width + 1);
+		++row) {
+		path_distances.SetSafe(std::make_pair(row, 0), BIG);
+	}
+	for (int col = 0; col < std::min(matrix_size.second, config_.sdtw_width + 1);
+		++col) {
+		path_distances.SetSafe(std::make_pair(0, col), BIG);
+	}
+
 }
 
 void FastPatternSearcher::MergeAndTrimPaths(
