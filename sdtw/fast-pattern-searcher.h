@@ -16,7 +16,6 @@ namespace kaldi {
 struct FastPatternSearcherConfig {
 	bool use_cosine;
 	bool use_dotprod;
-	bool use_euclidean;
 	bool use_kl;
 	BaseFloat quantize_threshold;
 	int32 smoother_length;
@@ -26,7 +25,7 @@ struct FastPatternSearcherConfig {
 	BaseFloat sdtw_trim;
 
 	FastPatternSearcherConfig(): use_cosine(true), use_dotprod(false),
-		use_euclidean(false), use_kl(false), quantize_threshold(0.5),
+		use_kl(false), quantize_threshold(0.5),
 		smoother_length(7), smoother_median(0.5), sdtw_width(10),
 		sdtw_budget(7.0), sdtw_trim(0.1) {}
 
@@ -36,8 +35,6 @@ struct FastPatternSearcherConfig {
 				"unpredictable when multiple similarity measures are specified.");
 		po.Register("use-dotprod", &use_dotprod,
 				"Use dot product similarity between frames");
-		po.Register("use-euclidean", &use_euclidean,
-				"Use Euclidean similarity between frames");
 		po.Register("use-kl", &use_kl,
 				"Use KL similarity between frames");
 		po.Register("quantize-threshold", &quantize_threshold,
@@ -60,7 +57,7 @@ struct FastPatternSearcherConfig {
 		KALDI_ASSERT(quantize_threshold >= 0 && smoother_length > 0
 								 && smoother_median >= 0 && smoother_median <= 1
 								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0
-								 && (use_cosine || use_dotprod || use_euclidean || use_kl));
+								 && (use_cosine || use_dotprod || use_kl));
 	}
 };
 
@@ -84,7 +81,6 @@ public:
 							const std::vector<std::string> &utt_ids,
 							PatternStringWriter *pattern_writer) const;
 
-private:
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
@@ -151,9 +147,11 @@ private:
 				const BaseFloat &sdtw_trim,
 				std::vector<Path> *sdtw_paths) const;
 
-	void WritePaths(const vector<Path> &sdtw_paths,
+	void WritePaths(std::string first_id, std::string second_id,
+									const vector<Path> &sdtw_paths,
 									PatternStringWriter *writer) const;
 
+private:
 	FastPatternSearcherConfig config_;
 };
 

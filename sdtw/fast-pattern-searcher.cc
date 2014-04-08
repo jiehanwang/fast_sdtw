@@ -16,7 +16,7 @@ namespace kaldi {
 FastPatternSearcher::FastPatternSearcher(
 				const FastPatternSearcherConfig &config): config_(config) {
 	config.Check();
-	// TODO: Set the similarity measure to use here
+	// TODO: Set the similarity measure to use here. Should I make it an enum?
 }
 
 bool FastPatternSearcher::Search(
@@ -53,6 +53,8 @@ bool FastPatternSearcher::Search(
 			//TODO: Implement these methods as well as SparseMatrix, Line, Path,
 			// and PatternStringWriter
 			//TODO: Unit tests for everything!
+			//TODO: Perhaps make peak_delta, kernel_radius, block_filter_threshold
+			//      arguments/options
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
@@ -81,7 +83,7 @@ bool FastPatternSearcher::Search(
 			std::vector<Path> sdtw_paths;
 			WarpLinesToPaths(thresholded_raw_similarity_matrix,
 											 filtered_line_locations, &sdtw_paths);
-			WritePaths(sdtw_paths);
+			WritePaths(first_utt, second_utt, sdtw_paths, pattern_writer);
 		}
 	}
 }
@@ -385,12 +387,12 @@ void FastPatternSearcher::SDTWWarp(
 	SparseMatrix<DTW_move_t> path_decisions;
 	path_decisions.SetSize(dtw_size);
 	path_distances.SetSafe(std::make_pair(0,0), 0.0);
-	for (size_t row = 0; row < std::min(matrix_size.first, config_.sdtw_width + 1);
-		++row) {
+	for (size_t row = 0;
+		row < std::min(matrix_size.first, config_.sdtw_width + 1); ++row) {
 		path_distances.SetSafe(std::make_pair(row, 0), BIG);
 	}
-	for (int col = 0; col < std::min(matrix_size.second, config_.sdtw_width + 1);
-		++col) {
+	for (int col = 0;
+		col < std::min(matrix_size.second, config_.sdtw_width + 1); ++col) {
 		path_distances.SetSafe(std::make_pair(0, col), BIG);
 	}
 
@@ -468,7 +470,7 @@ void FastPatternSearcher::WarpLinesToPaths(
 		const size_t midpoint_col = (this_line.start.second +
 									 this_line.end.second) / 2;
 		const pair<size_t, size_t> midpoint =
-			make_pair<size_t, size_t>(midpoint_row, midpoint_col);
+			make_pair(midpoint_row, midpoint_col);
 		Path path_to_midpoint;
 		Path path_from_midpoint;
 		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);

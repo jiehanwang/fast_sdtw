@@ -17,7 +17,6 @@ namespace kaldi {
 BaseFloat CosineSimilarity(const Vector<BaseFloat> &first, const Vector<BaseFloat> &second);
 BaseFloat KLSimilarity(const Vector<BaseFloat> &first, const Vector<BaseFloat> &second);
 BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first, const Vector<BaseFloat> &second);
-BaseFloat EuclideanSimilarity(const Vector<BaseFloat> &first, const Vector<BaseFloat> &second);
 
 struct Line {
 	std::pair<size_t, size_t> start;
@@ -33,9 +32,6 @@ struct Path {
 	vector<BaseFloat> similarities;
 };
 
-// Define the [][] operator for this class to make things easier.
-// Also include a method to iterate over the nonzero elements in O(k) time
-// where k is the number of nonzero entries.
 template<class T> class SparseMatrix {
 	public:
 		SparseMatrix() : mat_() {
@@ -44,7 +40,7 @@ template<class T> class SparseMatrix {
 
 		~SparseMatrix() {};
 
-		std::vector< std::pair<size_t, size_t> > GetNonzeroElements();
+		std::vector<std::pair<size_t, size_t> > GetNonzeroElements();
 
 		void Clear();
 
@@ -61,6 +57,8 @@ template<class T> class SparseMatrix {
 		std::pair<size_t, size_t> GetSize() const;
 
 		bool SetSize(const std::pair<size_t, size_t> &size);
+
+		bool SetSize(const size_t &num_row, const size_t &num_col);
 
 		bool Set(const std::pair<size_t, size_t> &coordinate,
 				 		 const T &value);
