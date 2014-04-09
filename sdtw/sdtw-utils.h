@@ -28,8 +28,8 @@ struct Line {
 };
 
 struct Path {
-	std::vector< std::pair<size_t, size_t> > path_points;
-	vector<BaseFloat> similarities;
+	std::vector<std::pair<size_t, size_t> > path_points;
+	std::vector<BaseFloat> similarities;
 };
 
 template<class T> class SparseMatrix {
