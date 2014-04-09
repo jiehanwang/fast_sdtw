@@ -38,7 +38,7 @@ BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first,
 
 template<class T> std::vector<std::pair<size_t, size_t> > SparseMatrix<T>::GetNonzeroElements() {
 	std::vector<std::pair<size_t, size_t> > retval;
-	for (std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
+	for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
 		retval.push_back(it->first);
 	}
 	return retval;
@@ -51,7 +51,7 @@ template<class T> void SparseMatrix<T>::Clear() {
 
 template<class T> void SparseMatrix<T>::Clamp(const T &epsilon) {
 	std::map<std::pair<size_t, size_t>, T> clamped_mat;
-	for (std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
+	for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
 		if (it->second > epsilon) {
 			clamped_mat[it->first] = it->second;
 		}
