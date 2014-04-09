@@ -20,7 +20,7 @@ FastPatternSearcher::FastPatternSearcher(
 }
 
 bool FastPatternSearcher::Search(
-				const std::vector< Matrix<BaseFloat> &utt_features,
+				const std::vector<Matrix<BaseFloat> > &utt_features,
 				const std::vector<std::string> &utt_ids,
 				PatternStringWriter *pattern_writer) const {
 
@@ -71,7 +71,7 @@ bool FastPatternSearcher::Search(
 																&blurred_matrix);
 			std::vector<BaseFloat> hough_transform;
 			ComputeDiagonalHoughTransform(blurred_matrix, &hough_transform);
-			vector<int32> peak_locations;
+			std::vector<int32> peak_locations;
 			const BaseFloat peak_delta = 0.25;
 			PickPeaksInVector(hough_transform, peak_delta, &peak_locations);
 			std::vector<Line> line_locations;
@@ -86,6 +86,7 @@ bool FastPatternSearcher::Search(
 			WritePaths(first_utt, second_utt, sdtw_paths, pattern_writer);
 		}
 	}
+	return true;
 }
 
 void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
@@ -105,22 +106,21 @@ void FastPatternSearcher::QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				const BaseFloat &quantization_threshold,
 				SparseMatrix<int32> *quantized_matrix) const {
-	KALDI_ASSERT(quantized_similarity_matrix != NULL);
+	KALDI_ASSERT(quantized_matrix != NULL);
 	quantized_matrix->Clear();
 	quantized_matrix->SetSize(input_matrix.GetSize());
-	const std::vector< std::pair<size_t, size_t> > nonzeros =
+	const std::vector<std::pair<size_t, size_t> > nonzeros =
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) {
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
 		if (input_matrix.Get(coordinate) >= quantization_threshold) {
-			quantized_similarity_matrix->Set(coordinate, 1);
+			quantized_matrix->Set(coordinate, 1);
 		}
 	}
 }
 
 void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 				const SparseMatrix<int32> &input_matrix,
-				const int32 &smoother_length,
 				const BaseFloat &smoother_median,
 				SparseMatrix<int32> *median_smoothed_matrix) const {
 	KALDI_ASSERT(median_smoothed_matrix != NULL);
@@ -131,11 +131,11 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	// coordinates (that fall within the radius of the diagonal median smoothing
 	// filter) by 1.
 	SparseMatrix<int32> median_counts;
-	const std::vector< std::pair<size_t, size_t> > nonzeros = 
+	const std::vector<std::pair<size_t, size_t> > nonzeros = 
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) {
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
-		for (int j = -1 * smoother_length; j <= smoother_length; ++j) {
+		for (int j = -1 * config_.smoother_length; j <= config_.smoother_length; ++j) {
 			const std::pair<size_t, size_t> offset_coordinate = 
 				std::make_pair<size_t, size_t>(coordinate.first + j,
 																			 coordinate.second + j);
@@ -150,13 +150,13 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	// Precomputes the count threshold for median smoothing. These casts
 	// *should* work, but definitely needs to be tested.
 	const int32 threshold = static_cast<int32>(
-		2 * smoother_median * (smoother_length + 1));
+		2 * smoother_median * (config_.smoother_length + 1));
 	for (int i = 0; i < nonzero_counts.size(); ++i) {
 		// If this count is above the median threshold, sets the corresponding
 		// element of median_smoothed_matrix to a 1
 		const std::pair<size_t, size_t> coordinate = nonzero_counts[i];
 		if (median_counts.Get(coordinate) >= threshold) {
-			median_smoothed_matrix.Set(coordinate, 1);
+			median_smoothed_matrix->SetSafe(coordinate, 1);
 		}
 	}
 }
@@ -195,7 +195,7 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 			for (kernel_col = 0; kernel_col < kernel_width; ++ kernel_col) {
 				const BaseFloat &kernel_value =
 					kernel[kernel_row * kernel_width + kernel_col];
-				const BaseFloat &matrix_value = input_matrix.Get(coordinate);
+				const BaseFloat &matrix_value = input_matrix.GetSafe(coordinate);
 				const size_t increment_row =
 					coordinate.first + kernel_row - kernel_radius;
 				const size_t increment_col =
@@ -338,7 +338,7 @@ void FastPatternSearcher::ScanDiagsForLines(
 }
 
 void FastPatternSearcher::FilterBlockLines(
-				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const SparseMatrix<int32> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const {

@@ -30,26 +30,26 @@ struct FastPatternSearcherConfig {
 		sdtw_budget(7.0), sdtw_trim(0.1) {}
 
 	void Register(OptionsItf *po) {
-		po.Register("use-cosine", &use_cosine,
+		po->Register("use-cosine", &use_cosine,
 				"Use cosine similarity between frames. Behavior may be "
 				"unpredictable when multiple similarity measures are specified.");
-		po.Register("use-dotprod", &use_dotprod,
+		po->Register("use-dotprod", &use_dotprod,
 				"Use dot product similarity between frames");
-		po.Register("use-kl", &use_kl,
+		po->Register("use-kl", &use_kl,
 				"Use KL similarity between frames");
-		po.Register("quantize-threshold", &quantize_threshold,
+		po->Register("quantize-threshold", &quantize_threshold,
 				"Frame similarities below this value are set to 0");
-		po.Register("smoother-length", &smoother_length,
+		po->Register("smoother-length", &smoother_length,
 				"Context radius of the diagonal median smoothing filter. Total "
 				"filter length is twice this value plus one");
-		po.Register("smoother-median", &smoother_median,
+		po->Register("smoother-median", &smoother_median,
 				"Mu parameter for the median smoothing filter");
-		po.Register("sdtw-width", &sdtw_width,
+		po->Register("sdtw-width", &sdtw_width,
 				"S-DTW bandwidth parameter");
-		po.Register("sdtw-budget", &sdtw_budget,
+		po->Register("sdtw-budget", &sdtw_budget,
 				"S-DTW distortion budget for each direction "
 				"(forwards and backwards)");
-		po.Register("sdtw-trim", &sdtw_trim,
+		po->Register("sdtw-trim", &sdtw_trim,
 				"Trim frames from the ends of each warp path whose similarity "
 				"falls below this threshold");
 	}
@@ -77,7 +77,7 @@ public:
 	}
 
 	// TODO: Check that I am passing in the pattern_writer properly (pointer)
-	bool Search(const std::vector< Matrix<BaseFloat> &utt_features,
+	bool Search(const std::vector Matrix<BaseFloat> > &utt_features,
 							const std::vector<std::string> &utt_ids,
 							PatternStringWriter *pattern_writer) const;
 
@@ -118,7 +118,7 @@ public:
 
 	void PickPeaksInVector(
 				const std::vector<BaseFloat> &input_vector,
-				const BaseFloat &peak_delta
+				const BaseFloat &peak_delta,
 				std::vector<size_t> *peak_locations) const;
 
 	void ScanDiagsForLines(
@@ -142,13 +142,10 @@ public:
 	void WarpLinesToPaths(
 				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
-				const int32 &sdtw_width,
-				const BaseFloat &sdtw_budget,
-				const BaseFloat &sdtw_trim,
 				std::vector<Path> *sdtw_paths) const;
 
 	void WritePaths(std::string first_id, std::string second_id,
-									const vector<Path> &sdtw_paths,
+									const std::vector<Path> &sdtw_paths,
 									PatternStringWriter *writer) const;
 
 private:
