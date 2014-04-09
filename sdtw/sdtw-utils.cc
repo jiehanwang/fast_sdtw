@@ -98,10 +98,12 @@ template<class T> bool SparseMatrix<T>::SetSize(const std::pair<size_t, size_t> 
 template<class T> bool SparseMatrix<T>::Set(const std::pair<size_t, size_t> &coordinate,
 		 		 const T &value) {
 	mat_[coordinate] = value;
+	return true;
 }
 
 template<class T> bool SparseMatrix<T>::Set(const size_t &row, const size_t &col, const T &value) {
 	mat_[std::make_pair(row, col)] = value;
+	return true;
 }
 
 template<class T> bool SparseMatrix<T>::SetSafe(const std::pair<size_t, size_t> &coordinate,
@@ -124,7 +126,7 @@ template<class T> bool SparseMatrix<T>::IncrementSafe(const std::pair<size_t, si
 				   				 const T &increment) {
 	if (coordinate.first >= 0 && coordinate.first < size_.first &&
 			coordinate.second >= 0 && coordinate.second < size_.second) {
-		std::map<std::pair<size_t, size_t>, T>::const_iterator search = mat_.find(coordinate);
+		typename std::map<std::pair<size_t, size_t>, T>::const_iterator search = mat_.find(coordinate);
 		if (search != mat_.end()) {
 			mat_[coordinate] = mat_[coordinate] + increment;
 		} else {
