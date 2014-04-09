@@ -3,7 +3,7 @@
 // Author: David Harwath
 
 #include <map>
-#include <pair>
+#include <utility>
 #include <vector>
 
 #include "base/kaldi-common.h"

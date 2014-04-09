@@ -6,7 +6,7 @@
 #define KALDI_SDTW_SDTW_UTILS_H
 
 #include <map>
-#include <pair>
+#include <utility>
 #include <vector>
 
 #include "base/kaldi-common.h"
