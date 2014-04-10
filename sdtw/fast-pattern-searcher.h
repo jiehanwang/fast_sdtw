@@ -77,7 +77,7 @@ public:
 	}
 
 	// TODO: Check that I am passing in the pattern_writer properly (pointer)
-	bool Search(const std::vector Matrix<BaseFloat> > &utt_features,
+	bool Search(const std::vector<Matrix<BaseFloat> > &utt_features,
 							const std::vector<std::string> &utt_ids,
 							PatternStringWriter *pattern_writer) const;
 
@@ -103,8 +103,6 @@ public:
 	// the matrix pointed to by median_smoothed_matrix is empty!
 	void ApplyMedianSmootherToMatrix(
 				const SparseMatrix<int32> &input_matrix,
-				const int32 &smoother_length,
-				const BaseFloat &smoother_median,
 				SparseMatrix<int32> *median_smoothed_matrix) const;
 
 	void ApplyGaussianBlurToMatrix(
@@ -119,7 +117,7 @@ public:
 	void PickPeaksInVector(
 				const std::vector<BaseFloat> &input_vector,
 				const BaseFloat &peak_delta,
-				std::vector<size_t> *peak_locations) const;
+				std::vector<int32> *peak_locations) const;
 
 	void ScanDiagsForLines(
 				const SparseMatrix<BaseFloat> &input_matrix,

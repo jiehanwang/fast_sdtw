@@ -40,7 +40,7 @@ template<class T> class SparseMatrix {
 
 		~SparseMatrix() {};
 
-		std::vector<std::pair<size_t, size_t> > GetNonzeroElements();
+		std::vector<std::pair<size_t, size_t> > GetNonzeroElements() const;
 
 		void Clear();
 

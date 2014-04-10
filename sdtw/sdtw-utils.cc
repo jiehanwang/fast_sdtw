@@ -36,7 +36,7 @@ BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first,
 	return f.Sum();
 }
 
-template<class T> std::vector<std::pair<size_t, size_t> > SparseMatrix<T>::GetNonzeroElements() {
+template<class T> std::vector<std::pair<size_t, size_t> > SparseMatrix<T>::GetNonzeroElements() const {
 	std::vector<std::pair<size_t, size_t> > retval;
 	for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
 		retval.push_back(it->first);

@@ -121,7 +121,6 @@ void FastPatternSearcher::QuantizeMatrix(
 
 void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 				const SparseMatrix<int32> &input_matrix,
-				const BaseFloat &smoother_median,
 				SparseMatrix<int32> *median_smoothed_matrix) const {
 	KALDI_ASSERT(median_smoothed_matrix != NULL);
 	median_smoothed_matrix->Clear();
@@ -150,7 +149,7 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	// Precomputes the count threshold for median smoothing. These casts
 	// *should* work, but definitely needs to be tested.
 	const int32 threshold = static_cast<int32>(
-		2 * smoother_median * (config_.smoother_length + 1));
+		2 * config_.smoother_median * (config_.smoother_length + 1));
 	for (int i = 0; i < nonzero_counts.size(); ++i) {
 		// If this count is above the median threshold, sets the corresponding
 		// element of median_smoothed_matrix to a 1
@@ -215,34 +214,35 @@ void FastPatternSearcher::ComputeDiagonalHoughTransform(
 				std::vector<BaseFloat> *hough_transform) const {
 	KALDI_ASSERT(hough_transform != NULL);
 	hough_transform->clear();
-		// For an M by N matrix, there will be (M + N - 1) total diagonals.
-		// The lower left corner of the matrix corresponds to diagonal index 0,
-		// while the upper right corner of the matrix corresponds to diagonal
-		// index (M + N - 2)
-		const size_t M = input_matrix.NumRows();
-		const size_t N = input_matrix.NumCols();
-		hough_transform->resize(M + N - 1);
-		// Iterate over the nonzero elements of the matrix, figure out which
-		// diagonal the coordinate resides in, and then increment the
-		// corresponding index of the hough_transform vector by the value of the
-		// matrix at said coordinate.
-		// Based on the way we have defined the 0th diagonal (bottom left corner
-		// of the input_matrix) and the (M + N - 2)th diagonal (upper right corner
-		// of the input matrix), the index of the diagonal at coordinate
-		// (row, col) is given by (col - row + M - 1).
-		const std::vector< std::pair<size_t, size_t> > nonzeros = 
-			input_matrix.GetNonzeroElements();
-		for (int i = 0; i < nonzeros.size(); ++i) {
-			const std::pair<size_t, size_t> &coordinate = nonzeros[i];
-			const int diag = coordinate.second - coordinate.first + M - 1;
-			KALDI_ASSERT(diag >= 0 && diag <= (M + N - 1));
-			hough_transform[diag] += input_matrix.Get(coordinate);
-		}
+	// For an M by N matrix, there will be (M + N - 1) total diagonals.
+	// The lower left corner of the matrix corresponds to diagonal index 0,
+	// while the upper right corner of the matrix corresponds to diagonal
+	// index (M + N - 2)
+	const std::pair<size_t, size_t> input_size = input_matrix.GetSize();
+	const size_t M = input_size.first;
+	const size_t N = input_size.second;
+	hough_transform->resize(M + N - 1);
+	// Iterate over the nonzero elements of the matrix, figure out which
+	// diagonal the coordinate resides in, and then increment the
+	// corresponding index of the hough_transform vector by the value of the
+	// matrix at said coordinate.
+	// Based on the way we have defined the 0th diagonal (bottom left corner
+	// of the input_matrix) and the (M + N - 2)th diagonal (upper right corner
+	// of the input matrix), the index of the diagonal at coordinate
+	// (row, col) is given by (col - row + M - 1).
+	const std::vector< std::pair<size_t, size_t> > nonzeros = 
+		input_matrix.GetNonzeroElements();
+	for (int i = 0; i < nonzeros.size(); ++i) {
+		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
+		const int diag = coordinate.second - coordinate.first + M - 1;
+		KALDI_ASSERT(diag >= 0 && diag <= (M + N - 1));
+		(*hough_transform)[diag] += input_matrix.GetSafe(coordinate);
+	}
 }
 
 // This function uses the peakdet algorithm by Eli Billauer (public domain).
 void FastPatternSearcher::PickPeaksInVector(
-				const vector<BaseFloat> &input_vector,
+				const std::vector<BaseFloat> &input_vector,
 				const BaseFloat &peak_delta
 				std::vector<int32> *peak_locations) const {
 	KALDI_ASSERT(peak_locations != NULL);
@@ -293,8 +293,9 @@ void FastPatternSearcher::ScanDiagsForLines(
 				std::vector<Line> *line_locations) const {
 	KALDI_ASSERT(line_locations != NULL);
 	line_locations->clear();
-	const size_t M = input_matrix.NumRows();
-	const size_t N = input_matrix.NumCols();
+	const std::pair<size_t, size_t> input_size = input_matrix.GetSize();
+	const size_t M = input_size.first;
+	const size_t N = input_size.second;
 	// The idea here is simple; for each diagonal we want to scan, we simply
 	// iterate over the elements in that diagonal (in order), looking for 
 	// continuous nonzero regions.
@@ -319,7 +320,7 @@ void FastPatternSearcher::ScanDiagsForLines(
 			col = 0;
 		}
 		KALDI_ASSERT(row >= 0 && col >= 0);
-		bool prev_nonzero = false
+		bool prev_nonzero = false;
 		size_t line_start_row;
 		size_t line_start_col;
 		for(; (row < M && col < N); ++row, ++col;) {
