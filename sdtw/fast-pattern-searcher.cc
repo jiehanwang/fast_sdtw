@@ -190,8 +190,8 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) { 
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
-		for (size_t kernel_row = 0; size_t kernel_row < kernel_width; ++kernel_row) {
-			for (kernel_col = 0; kernel_col < kernel_width; ++ kernel_col) {
+		for (size_t kernel_row = 0; kernel_row < kernel_width; ++kernel_row) {
+			for (size_t kernel_col = 0; kernel_col < kernel_width; ++ kernel_col) {
 				const BaseFloat &kernel_value =
 					kernel[kernel_row * kernel_width + kernel_col];
 				const BaseFloat &matrix_value = input_matrix.GetSafe(coordinate);
