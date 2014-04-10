@@ -190,7 +190,7 @@ void FastPatternSearcher::ApplyGaussianBlurToMatrix(
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) { 
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
-		for (kernel_row = 0; kernel_row < kernel_width; ++kernel_row) {
+		for (size_t kernel_row = 0; size_t kernel_row < kernel_width; ++kernel_row) {
 			for (kernel_col = 0; kernel_col < kernel_width; ++ kernel_col) {
 				const BaseFloat &kernel_value =
 					kernel[kernel_row * kernel_width + kernel_col];
@@ -275,7 +275,7 @@ void FastPatternSearcher::PickPeaksInVector(
 			mnidx = i;
 		}
 		if (findMax && val < (mx - delta)) {
-				peak_locations.push_back(mxidx);
+				peak_locations->push_back(mxidx);
 				mn = val;
 				mnidx = i;
 				findMax = false;
@@ -324,7 +324,7 @@ void FastPatternSearcher::ScanDiagsForLines(
 		size_t line_start_row = 0;
 		size_t line_start_col = 0;
 		while (row < M && col < N) {
-			const BaseFloat value = input_matrix.Get();
+			const BaseFloat value = input_matrix.GetSafe(std::make_pair(row, col));
 			if (!prev_nonzero && value > 0.0) {
 				prev_nonzero = true;
 				line_start_row = row;
@@ -383,8 +383,8 @@ void FastPatternSearcher::SDTWWarp(
 	const BaseFloat BIG = 1e20;
 	enum DTW_move_t {INSERT, MATCH, DELETE};
 	std::pair<size_t, size_t> input_size = similarity_matrix.GetSize();
-	std::pair<size_t, size_t> dtw_size = make_pair(input_size.first + 1,
-																								 input_size.second + 1);
+	std::pair<size_t, size_t> dtw_size = std::make_pair(input_size.first + 1,
+																								 			input_size.second + 1);
 	SparseMatrix<BaseFloat> path_distances;
 	path_distances.SetSize(dtw_size);
 	SparseMatrix<DTW_move_t> path_decisions;
@@ -404,7 +404,8 @@ void FastPatternSearcher::SDTWWarp(
 void FastPatternSearcher::MergeAndTrimPaths(
 	const Path &first_half, const Path &second_half, Path *result) const {
 	KALDI_ASSERT(result != NULL);
-	result->clear();
+	result->path_points.clear();
+	result->similarities.clear();
 	KALDI_ASSERT(first_half.path_points.size()
 				 == first_half.similarities.size());
 	KALDI_ASSERT(second_half.path_points.size()
@@ -454,8 +455,8 @@ void FastPatternSearcher::MergeAndTrimPaths(
 		}
 	}
 	for (int i = 0; i < path.size(); ++i) {
-		result->push_back(path[i].first);
-		result->push_back(path[i].second);
+		result->path_points.push_back(path[i].first);
+		result->similarities.push_back(path[i].second);
 	}
 }
 
@@ -472,8 +473,8 @@ void FastPatternSearcher::WarpLinesToPaths(
 									 this_line.end.first) / 2;
 		const size_t midpoint_col = (this_line.start.second +
 									 this_line.end.second) / 2;
-		const pair<size_t, size_t> midpoint =
-			make_pair(midpoint_row, midpoint_col);
+		const std::pair<size_t, size_t> midpoint =
+			std::make_pair(midpoint_row, midpoint_col);
 		Path path_to_midpoint;
 		Path path_from_midpoint;
 		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
@@ -488,6 +489,6 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 									 PatternStringWriter *writer) const {
 	KALDI_ASSERT(writer != NULL);
 // TODO: finish this method.
-}
+} 
 
 }  // end namespace kaldi
