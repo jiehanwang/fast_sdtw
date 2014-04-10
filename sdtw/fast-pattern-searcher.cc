@@ -243,7 +243,7 @@ void FastPatternSearcher::ComputeDiagonalHoughTransform(
 // This function uses the peakdet algorithm by Eli Billauer (public domain).
 void FastPatternSearcher::PickPeaksInVector(
 				const std::vector<BaseFloat> &input_vector,
-				const BaseFloat &peak_delta
+				const BaseFloat &peak_delta,
 				std::vector<int32> *peak_locations) const {
 	KALDI_ASSERT(peak_locations != NULL);
 	KALDI_ASSERT(input_vector.size() > 0);
@@ -321,9 +321,9 @@ void FastPatternSearcher::ScanDiagsForLines(
 		}
 		KALDI_ASSERT(row >= 0 && col >= 0);
 		bool prev_nonzero = false;
-		size_t line_start_row;
-		size_t line_start_col;
-		for(; (row < M && col < N); ++row, ++col;) {
+		size_t line_start_row = 0;
+		size_t line_start_col = 0;
+		while (row < M && col < N) {
 			const BaseFloat value = input_matrix.Get();
 			if (!prev_nonzero && value > 0.0) {
 				prev_nonzero = true;
@@ -334,6 +334,8 @@ void FastPatternSearcher::ScanDiagsForLines(
 				const Line line(line_start_row, line_start_col, row, col);
 				line_locations->push_back(line);
 			}
+			++row;
+			++col;
 		}
 	}
 }
