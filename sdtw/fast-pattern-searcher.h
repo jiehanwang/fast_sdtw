@@ -109,7 +109,7 @@ public:
 
 	void ApplyGaussianBlurToMatrix(
 				const SparseMatrix<int32> &input_matrix,
-				const int32 &kernel_width,
+				const int32 &kernel_radius,
 				SparseMatrix<BaseFloat> *blurred_matrix) const;
 
 	void ComputeDiagonalHoughTransform(
