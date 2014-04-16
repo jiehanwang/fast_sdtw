@@ -44,7 +44,7 @@ void Path::Read(std::istream &in_stream, bool binary) {
   ReadToken(in_stream, binary, &id1);
   ExpectToken(in_stream, binary, "<ID2>");
   ReadToken(in_stream, binary, &id2);
-  ExpectToken(in_stream, binary, "<LENGTH>")
+  ExpectToken(in_stream, binary, "<LENGTH>");
   ReadBasicType(in_stream, binary, &path_length);
   similarities.clear();
   path_points.clear();
@@ -57,7 +57,7 @@ void Path::Read(std::istream &in_stream, bool binary) {
   	ReadBasicType(in_stream, binary, &second);
   	ReadBasicType(in_stream, binary, &similarity);
     similarities.push_back(similarity);
-    path_points.push_back(std::make_pair(first, second)):
+    path_points.push_back(std::make_pair(first, second));
   }
 }
 
@@ -71,7 +71,7 @@ void Path::Write(std::ostream &out_stream, bool binary) const {
   WriteToken(out_stream, binary, first_id);
   WriteToken(out_stream, binary, "<ID2>");
   WriteToken(out_stream, binary, second_id);
-  WriteToken(out_stream, binary, "<LENGTH>"):
+  WriteToken(out_stream, binary, "<LENGTH>");
  	WriteBasicType(out_stream, binary, path_length);
   for (int32 i = 0; i < path_length; ++i) {
     size_t first = path_points[i].first;
