@@ -5,6 +5,7 @@
 #ifndef KALDI_SDTW_SDTW_UTILS_H
 #define KALDI_SDTW_SDTW_UTILS_H
 
+#include <iostream>
 #include <map>
 #include <utility>
 #include <vector>
@@ -27,10 +28,17 @@ struct Line {
 	};
 };
 
-struct Path {
+class Path {
+public:
+	void Read(std::istream &in_stream, bool binary);
+	void Write(std::ostream &out_stream, bool binary) const;
 	std::vector<std::pair<size_t, size_t> > path_points;
 	std::vector<BaseFloat> similarities;
+	std::string first_id;
+	std::string second_id;
 };
+
+typedef TableWriter<KaldiObjectHolder<Path> > PathWriter;
 
 template<class T> class SparseMatrix {
 	public:

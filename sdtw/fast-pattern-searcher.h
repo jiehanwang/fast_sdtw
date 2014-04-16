@@ -79,7 +79,7 @@ public:
 	// TODO: Check that I am passing in the pattern_writer properly (pointer)
 	bool Search(const std::vector<Matrix<BaseFloat> > &utt_features,
 							const std::vector<std::string> &utt_ids,
-							PatternStringWriter *pattern_writer) const;
+							PathWriter *pattern_writer) const;
 
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
@@ -142,9 +142,8 @@ public:
 				const std::vector<Line> &line_locations,
 				std::vector<Path> *sdtw_paths) const;
 
-	void WritePaths(std::string first_id, std::string second_id,
-									const std::vector<Path> &sdtw_paths,
-									PatternStringWriter *writer) const;
+	void WritePaths(const std::vector<Path> &sdtw_paths,
+									PathWriter *writer) const;
 
 private:
 	FastPatternSearcherConfig config_;

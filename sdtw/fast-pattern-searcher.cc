@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "base/kaldi-common.h"
+#include <kaldi-holder-inl.h>
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"
@@ -22,7 +23,7 @@ FastPatternSearcher::FastPatternSearcher(
 bool FastPatternSearcher::Search(
 				const std::vector<Matrix<BaseFloat> > &utt_features,
 				const std::vector<std::string> &utt_ids,
-				PatternStringWriter *pattern_writer) const {
+				PathWriter *pattern_writer) const {
 
 	KALDI_ASSERT(utt_features.size() == utt_ids.size());
 
@@ -83,7 +84,11 @@ bool FastPatternSearcher::Search(
 			std::vector<Path> sdtw_paths;
 			WarpLinesToPaths(thresholded_raw_similarity_matrix,
 											 filtered_line_locations, &sdtw_paths);
-			WritePaths(first_utt, second_utt, sdtw_paths, pattern_writer);
+			for (int32 i = 0; i < sdtw_paths.size(); ++i) {
+				sdtw_paths[i].first_id = first_utt;
+				sdtw_paths[i].second_id = second_utt;
+			}
+			WritePaths(sdtw_paths, pattern_writer);
 		}
 	}
 	return true;
@@ -475,6 +480,17 @@ void FastPatternSearcher::WarpLinesToPaths(
 									 this_line.end.second) / 2;
 		const std::pair<size_t, size_t> midpoint =
 			std::make_pair(midpoint_row, midpoint_col);
+		const size_t start_row = midpoint_row - std::min(midpoint_row, midpoint_col);
+		const size_t start_col = midpoint_col - std::min(midpoint_row, midpoint_col);
+		const std::pair<size_t, size_t> matrix_size = similarity_matrix.GetSize();
+		const std::pair<size_t, size_t> origin = std::make_pair(start_row, start_col);
+		const size_t row_max = matrix_size.first - 1;
+		const size_t col_max = matrix_size.second - 1;
+		const size_t end_row = midpoint_row + std::min(row_max - midpoint_row,
+																									 col_max - midpoint_col);
+		const size_t end_col = midpoint_col + std::min(row_max - midpoint_row,
+																									 col_max - midpoint_col);
+		const std::pair<size_t, size_t> endpoint = std::make_pair(end_row, end_col);
 		Path path_to_midpoint;
 		Path path_from_midpoint;
 		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
@@ -486,9 +502,9 @@ void FastPatternSearcher::WarpLinesToPaths(
 }
 
 void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
-									 PatternStringWriter *writer) const {
+									 									 PathWriter *writer) const {
 	KALDI_ASSERT(writer != NULL);
-// TODO: finish this method.
+	
 } 
 
 }  // end namespace kaldi

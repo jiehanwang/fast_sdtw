@@ -7,6 +7,7 @@
 #include "base/kaldi-common.h"
 #include "feat/feature-functions.h" // do I need this?
 #include "sdtw/fast-pattern-searcher.h"
+#include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"
 #include "util/timer.h"
 
@@ -37,8 +38,7 @@ int main(int argc, char *argv[]) {
 		std::vector< Matrix<BaseFloat> > utt_features;
 
 		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
-		// TODO: Implement PatternStringWriter.
-		PatternStringWriter pattern_writer(patterns_wspecifier);
+		PathWriter pattern_writer(patterns_wspecifier);
 
 		for (; !feature_reader.Done(); feature_reader.Next()) {
 			std::string utt = feature_reader.Key();
