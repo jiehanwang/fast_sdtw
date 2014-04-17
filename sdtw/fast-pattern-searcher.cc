@@ -567,7 +567,7 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 	for (int32 i = 0; i < sdtw_paths.size(); ++i) {
 		const Path &path = sdtw_paths[i];
 		std::stringstream sstm;
-		sstm << "<" path.first_id << "><" << path.second_id << ">-" << i;
+		sstm << "<" << path.first_id << "><" << path.second_id << ">-" << i;
 		const std::string key = sstm.str();
 		writer->Write(key, path);
 	}

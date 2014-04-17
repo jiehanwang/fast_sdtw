@@ -21,30 +21,25 @@ int main(int argc, char *argv[]) {
 				"Usage: fast-sdtw [options] features-rspecifier patterns-wspecifier";
 		ParseOptions po(usage);
 		Timer timer;
-
+		FastPatternSearcherConfig config;
 		config.Register(&po);
 		po.Read(argc, argv);
-
 		if (po.NumArgs() != 2) {
 			po.PrintUsage();
 			exit(1);
 		}
-
 		std::string features_rspecifier = po.GetArg(1),
 								patterns_wspecifier = po.GetArg(2);
-
 		int32 num_err = 0;
 		std::vector<std::string> utt_ids;
 		std::vector< Matrix<BaseFloat> > utt_features;
-
 		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
 		PathWriter pattern_writer(patterns_wspecifier);
-
 		for (; !feature_reader.Done(); feature_reader.Next()) {
 			std::string utt = feature_reader.Key();
-			Matrix<BaseFloat> features (feature_reader.Value());
+			Matrix<BaseFloat> features(feature_reader.Value());
 			feature_reader.FreeCurrent(); // Do I need this? What does this do?
-			if (feature.NumRows() == 0) {
+			if (features.NumRows() == 0) {
 				KALDI_WARN << "Zero-length utterance: " << utt;
 				num_err++;
 				continue;
@@ -57,7 +52,7 @@ int main(int argc, char *argv[]) {
 		searcher.Search(utt_features, utt_ids, &pattern_writer);
 
 		double elapsed = timer.Elapsed();
-		KALDI_LOG << "Time taken: " << elapsed " seconds.";
+		KALDI_LOG << "Time taken: " << elapsed << " seconds.";
 
 	} catch(const std::exception &e) {
 		std::cerr << e.what();
