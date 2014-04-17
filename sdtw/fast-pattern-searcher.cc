@@ -391,7 +391,7 @@ void FastPatternSearcher::SDTWWarp(
 	const int32 DOWN = 0;
 	const int32 RIGHT = 1;
 	const int32 DIAG = 2;
-	std::pair<size_t, size_t> input_size = similarity_matrix.GetSize();
+	std::pair<int32, int32> input_size = similarity_matrix.GetSize();
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
 	const int32 end_row = end_point.first;
@@ -452,7 +452,7 @@ void FastPatternSearcher::SDTWWarp(
 				backtrace_col--;
 				break;
 			default:
-				KALDI_WARN << "Warning: SDTW warp backtrace failed."
+				KALDI_WARN << "Warning: SDTW warp backtrace failed.";
 				break;
 		}
 		const std::pair<size_t, size_t> idx = 
