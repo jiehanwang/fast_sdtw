@@ -384,9 +384,13 @@ void FastPatternSearcher::SDTWWarp(
 	const std::pair<size_t, size_t> &start_point,
 	const std::pair<size_t, size_t> &end_point, Path *path) const {
 	KALDI_ASSERT(path != NULL);
-	//TODO: finish this method.
 	const BaseFloat BIG_NEG = -1e20;
-	enum DTW_move_t {DOWN, RIGHT, DIAG};
+	// Ok, so I would like to use an enum here to represent the DTW move types,
+	// But templating on locally defined enums is bad news. So, I am just going
+	// to use int32s. Todo: Figure out a better way to do this.
+	const int32 DOWN = 0;
+	const int32 RIGHT = 1;
+	const int32 DIAG = 2;
 	std::pair<size_t, size_t> input_size = similarity_matrix.GetSize();
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
@@ -394,7 +398,7 @@ void FastPatternSearcher::SDTWWarp(
 	const int32 end_col = end_point.second;
 	KALDI_ASSERT(end_row < input_size.first && end_col < input_size.second);
 	KALDI_ASSERT(start_row <= end_row && start_col <= end_col);
-	std::map<std::pair<int32, int32>, DTW_move_t> path_decisions;
+	std::map<std::pair<int32, int32>, int32> path_decisions;
 	std::map<std::pair<int32, int32>, BaseFloat> path_similarities;
 	// Need to fix w to handle variable start and end points
 	const int32 w = std::max(config_.sdtw_width,
@@ -411,9 +415,9 @@ void FastPatternSearcher::SDTWWarp(
 		for (int32 col = std::max(0, row - w);
 				 col <= std::min(end_col, row + w); ++col) {
 			const BaseFloat sim = similarity_matrix.GetSafe(std::make_pair(row, col));
-			const BaseFloat sim_up = similarity_matrix.GetSafe(std::make_pair(row - 1, col));
-			const BaseFloat sim_left = similarity_matrix.GetSafe(std::make_pair(row, col - 1));
-			const BaseFloat sim_diag = similarity_matrix.GetSafe(std::make_pair(row - 1, col - 1));
+			const BaseFloat sim_up = path_similarities[std::make_pair(row - 1, col)];
+			const BaseFloat sim_left = path_similarities[std::make_pair(row, col - 1)];
+			const BaseFloat sim_diag = path_similarities[std::make_pair(row - 1, col - 1)];
 			const std::pair<int32, int32> index = std::make_pair(row, col);
 			if (sim_diag >= sim_up && sim_diag >= sim_left) {
 				path_similarities[index] = sim + sim_diag;
@@ -436,7 +440,7 @@ void FastPatternSearcher::SDTWWarp(
 		similarity_matrix.GetSafe(std::make_pair(backtrace_row, backtrace_col)));
 	path->path_points.push_back(std::make_pair(backtrace_row, backtrace_col));;
 	while (backtrace_row != start_row && backtrace_col != start_col) {
-		switch() {
+		switch(path_decisions[std::make_pair(backtrace_row, backtrace_col)]) {
 			case DOWN:
 				backtrace_row--;
 				break;
@@ -448,6 +452,7 @@ void FastPatternSearcher::SDTWWarp(
 				backtrace_col--;
 				break;
 			default:
+				KALDI_WARN << "Warning: SDTW warp backtrace failed."
 				break;
 		}
 		const std::pair<size_t, size_t> idx = 
