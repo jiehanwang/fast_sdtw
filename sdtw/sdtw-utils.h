@@ -91,4 +91,6 @@ template<class T> class SparseMatrix {
 
 }  // end namespace kaldi
 
+#include "sdtw-utils-inl.h"
+
 #endif
