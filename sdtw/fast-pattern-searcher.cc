@@ -58,12 +58,18 @@ bool FastPatternSearcher::Search(
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
+			KALDI_LOG << thresholded_raw_similarity_matrix.GetNonzeroElements().size() <<
+				" out of " << (first_features.NumRows() * second_features.NumRows()) << " elements are nonzero";
 			SparseMatrix<int32> quantized_similarity_matrix;
 			QuantizeMatrix(thresholded_raw_similarity_matrix,
 										 &quantized_similarity_matrix);
+			KALDI_LOG << quantized_similarity_matrix.GetNonzeroElements().size() <<
+				" elements are quantized to 1";
 			SparseMatrix<int32> median_smoothed_matrix;
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
 																	&median_smoothed_matrix);
+			KALDI_LOG << median_smoothed_matrix.GetNonzeroElements().size() <<
+				" elements remain after median smoothing";
 			SparseMatrix<BaseFloat> blurred_matrix;
 			const size_t kernel_radius = 1;
 			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
@@ -86,6 +92,8 @@ bool FastPatternSearcher::Search(
 				sdtw_paths[i].first_id = first_utt;
 				sdtw_paths[i].second_id = second_utt;
 			}
+			KALDI_LOG << "Found " << sdtw_paths.size() << " patterns between " << 
+				first_utt << " and " << second_utt;
 			WritePaths(sdtw_paths, pattern_writer);
 		}
 	}
@@ -99,12 +107,11 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	KALDI_ASSERT(similarity_matrix != NULL);
 	similarity_matrix->Clear();
 	const std::pair<int32, int32> size =
-		std::make_pair<int32, int32>(first_features.NumRows(),
-																	 second_features.NumRows());
+		std::make_pair<int32, int32>(first_features.NumRows(), second_features.NumRows());
 	similarity_matrix->SetSize(size);
 	// TODO: finish this method.
 	int32 num_rows = first_features.NumRows();
-	int32 num_cols = first_features.NumRows();
+	int32 num_cols = second_features.NumRows();
 	if (config_.use_cosine) {
 		for (int32 row = 0; row < num_rows; ++row) {
 			for (int32 col = 0; col < num_cols; ++col) {
@@ -167,14 +174,14 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	// coordinates (that fall within the radius of the diagonal median smoothing
 	// filter) by 1.
 	SparseMatrix<int32> median_counts;
+	median_counts.SetSize(input_matrix.GetSize());
 	const std::vector<std::pair<size_t, size_t> > nonzeros = 
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) {
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
 		for (int j = -1 * config_.smoother_length; j <= config_.smoother_length; ++j) {
 			const std::pair<size_t, size_t> offset_coordinate = 
-				std::make_pair<size_t, size_t>(coordinate.first + j,
-																			 coordinate.second + j);
+				std::make_pair(coordinate.first + j, coordinate.second + j);
 			// increment_safe() will not fail if it is supplied with a coordinate
 			// that is out of the matrix's range. It will simply not increment
 			// anything.
