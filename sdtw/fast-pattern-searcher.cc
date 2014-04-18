@@ -98,16 +98,16 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				SparseMatrix<BaseFloat> *similarity_matrix) const {
 	KALDI_ASSERT(similarity_matrix != NULL);
 	similarity_matrix->Clear();
-	const std::pair<size_t, size_t> size =
-		std::make_pair<size_t, size_t>(first_features.NumRows(),
+	const std::pair<int32, int32> size =
+		std::make_pair<int32, int32>(first_features.NumRows(),
 																	 second_features.NumRows());
 	similarity_matrix->SetSize(size);
 	// TODO: finish this method.
-	size_t num_rows = first_features.NumRows();
-	size_t num_cols = first_features.NumRows();
+	int32 num_rows = first_features.NumRows();
+	int32 num_cols = first_features.NumRows();
 	if (config_.use_cosine) {
-		for (size_t row = 0; row < num_rows; ++row) {
-			for (size_t col = 0; col < num_cols; ++col) {
+		for (int32 row = 0; row < num_rows; ++row) {
+			for (int32 col = 0; col < num_cols; ++col) {
 				const BaseFloat sim = CosineSimilarity(first_features.Row(row),
 																							 second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {
@@ -116,8 +116,8 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 			}
 		}
 	} else if (config_.use_dotprod) {
-		for (size_t row = 0; row < num_rows; ++row) {
-			for (size_t col = 0; col < num_cols; ++col) {
+		for (int32 row = 0; row < num_rows; ++row) {
+			for (int32 col = 0; col < num_cols; ++col) {
 				const BaseFloat sim = DotProdSimilarity(first_features.Row(row),
 																							 	second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {
@@ -126,8 +126,8 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 			}
 		}
 	} else if (config_.use_kl) {
-		for (size_t row = 0; row < num_rows; ++row) {
-			for (size_t col = 0; col < num_cols; ++col) {
+		for (int32 row = 0; row < num_rows; ++row) {
+			for (int32 col = 0; col < num_cols; ++col) {
 				const BaseFloat sim = KLSimilarity(first_features.Row(row),
 																					 second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {

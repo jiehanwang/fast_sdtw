@@ -78,7 +78,7 @@ BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
 }
 
 BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
-														const VSubector<BaseFloat> &second){
+														const SubVector<BaseFloat> &second){
 	SubVector<BaseFloat> f = first;
 	f.MulElements(second);
 	return f.Sum();

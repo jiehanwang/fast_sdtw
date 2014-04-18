@@ -39,9 +39,9 @@ struct FastPatternSearcherConfig {
 		po->Register("use-kl", &use_kl,
 				"Use KL similarity between frames");
 		po->Register("similarity-threshold", &similarity_threshold,
-					 "Similarities below this threshold are set to 0")
+					 "Similarities below this threshold are set to 0");
 		po->Register("quantize-threshold", &quantize_threshold,
-				"Similarity matrix quantization thresholdd");
+				"Similarity matrix quantization threshold");
 		po->Register("smoother-length", &smoother_length,
 				"Context radius of the diagonal median smoothing filter. Total "
 				"filter length is twice this value plus one");
