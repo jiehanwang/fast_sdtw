@@ -112,19 +112,28 @@ template<class T> class SparseMatrix {
 		}
 
 		T Get(const std::pair<size_t, size_t> &coordinate) const {
-			return mat_[coordinate];
+			T retval = T(0);
+			auto it = mat_.find(coordinate);
+			if (it != mat_.end()) {
+				retval = *it;
+			}
+			return retval;
 		}
 
 		T Get(const size_t &row, const size_t &col) const {
-			return mat_[std::make_pair(row, col)];
+			return Get(std::make_pair(row, col));
 		}
 
 		T GetSafe(const std::pair<size_t, size_t> &coordinate) const {
+			T retval = T(0);
 			if (coordinate.first >= 0 && coordinate.first < size_.first &&
 					coordinate.second >= 0 && coordinate.second < size_.second) {
-				return mat_[coordinate];
+				auto it = mat_.find(coordinate);
+				if (it != mat_.end()) {
+					retval = *it;
+				}
 			}
-			return T(0);
+			return retval;
 		}
 
 		T GetSafe(const size_t &row, const size_t &col) const {
