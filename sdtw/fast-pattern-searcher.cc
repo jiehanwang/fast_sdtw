@@ -17,7 +17,6 @@ namespace kaldi {
 FastPatternSearcher::FastPatternSearcher(
 				const FastPatternSearcherConfig &config): config_(config) {
 	config.Check();
-	// TODO: Set the similarity measure to use here. Should I make it an enum?
 }
 
 bool FastPatternSearcher::Search(
@@ -61,7 +60,6 @@ bool FastPatternSearcher::Search(
 																				 &thresholded_raw_similarity_matrix);
 			SparseMatrix<int32> quantized_similarity_matrix;
 			QuantizeMatrix(thresholded_raw_similarity_matrix,
-										 config_.quantize_threshold,
 										 &quantized_similarity_matrix);
 			SparseMatrix<int32> median_smoothed_matrix;
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
@@ -105,11 +103,45 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 																	 second_features.NumRows());
 	similarity_matrix->SetSize(size);
 	// TODO: finish this method.
+	size_t num_rows = first_features.NumRows();
+	size_t num_cols = first_features.NumRows();
+	if (config_.use_cosine) {
+		for (size_t row = 0; row < num_rows; ++row) {
+			for (size_t col = 0; col < num_cols; ++col) {
+				const BaseFloat sim = CosineSimilarity(first_features.Row(row),
+																							 second_features.Row(col));
+				if (sim >= config_.similarity_threshold) {
+					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+				}
+			}
+		}
+	} else if (config_.use_dotprod) {
+		for (size_t row = 0; row < num_rows; ++row) {
+			for (size_t col = 0; col < num_cols; ++col) {
+				const BaseFloat sim = DotProdSimilarity(first_features.Row(row),
+																							 	second_features.Row(col));
+				if (sim >= config_.similarity_threshold) {
+					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+				}
+			}
+		}
+	} else if (config_.use_kl) {
+		for (size_t row = 0; row < num_rows; ++row) {
+			for (size_t col = 0; col < num_cols; ++col) {
+				const BaseFloat sim = KLSimilarity(first_features.Row(row),
+																					 second_features.Row(col));
+				if (sim >= config_.similarity_threshold) {
+					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+				}
+			}
+		}
+	} else {
+		KALDI_WARN << "Warning: no distance measure specified.";
+	}
 }
 
 void FastPatternSearcher::QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
-				const BaseFloat &quantization_threshold,
 				SparseMatrix<int32> *quantized_matrix) const {
 	KALDI_ASSERT(quantized_matrix != NULL);
 	quantized_matrix->Clear();
@@ -118,7 +150,7 @@ void FastPatternSearcher::QuantizeMatrix(
 		input_matrix.GetNonzeroElements();
 	for (int i = 0; i < nonzeros.size(); ++i) {
 		const std::pair<size_t, size_t> &coordinate = nonzeros[i];
-		if (input_matrix.Get(coordinate) >= quantization_threshold) {
+		if (input_matrix.Get(coordinate) >= config_.quantize_threshold) {
 			quantized_matrix->Set(coordinate, 1);
 		}
 	}

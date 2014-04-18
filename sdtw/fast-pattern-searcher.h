@@ -17,6 +17,7 @@ struct FastPatternSearcherConfig {
 	bool use_cosine;
 	bool use_dotprod;
 	bool use_kl;
+	BaseFloat similarity_threshold;
 	BaseFloat quantize_threshold;
 	int32 smoother_length;
 	BaseFloat smoother_median;
@@ -25,7 +26,7 @@ struct FastPatternSearcherConfig {
 	BaseFloat sdtw_trim;
 
 	FastPatternSearcherConfig(): use_cosine(true), use_dotprod(false),
-		use_kl(false), quantize_threshold(0.5),
+		use_kl(false), similarity_threshold(.05), quantize_threshold(0.5),
 		smoother_length(7), smoother_median(0.5), sdtw_width(10),
 		sdtw_budget(7.0), sdtw_trim(0.1) {}
 
@@ -37,8 +38,10 @@ struct FastPatternSearcherConfig {
 				"Use dot product similarity between frames");
 		po->Register("use-kl", &use_kl,
 				"Use KL similarity between frames");
+		po->Register("similarity-threshold", &similarity_threshold,
+					 "Similarities below this threshold are set to 0")
 		po->Register("quantize-threshold", &quantize_threshold,
-				"Frame similarities below this value are set to 0");
+				"Similarity matrix quantization thresholdd");
 		po->Register("smoother-length", &smoother_length,
 				"Context radius of the diagonal median smoothing filter. Total "
 				"filter length is twice this value plus one");
@@ -93,7 +96,6 @@ public:
 	// predictable behavior, supply an empty matrix.
 	void QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
-				const BaseFloat &quantization_threshold,
 				SparseMatrix<int32> *quantized_matrix) const;
 
 	// Applies a diagonal median smoother to an (assumed) binary input matrix
