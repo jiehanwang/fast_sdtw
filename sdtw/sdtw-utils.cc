@@ -61,25 +61,25 @@ void Path::Write(std::ostream &out_stream, bool binary) const {
   }
 }
 
-BaseFloat CosineSimilarity(const Vector<BaseFloat> &first,
-													 const Vector<BaseFloat> &second){
-	Vector<BaseFloat> f = first;
-	Vector<BaseFloat> s = second;
+BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
+													 const SubVector<BaseFloat> &second){
+	SubVector<BaseFloat> f = first;
+	SubVector<BaseFloat> s = second;
 	f.Scale(1.0 / f.Norm(2));
 	s.Scale(1.0 / f.Norm(2));
 	f.MulElements(s);
 	return f.Sum();
 }
 
-BaseFloat KLSimilarity(const Vector<BaseFloat> &first,
-											 const Vector<BaseFloat> &second){
+BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
+											 const SubVector<BaseFloat> &second){
 	// TODO: Implement this.
 	return 0.0;
 }
 
-BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first,
-														const Vector<BaseFloat> &second){
-	Vector<BaseFloat> f = first;
+BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
+														const VSubector<BaseFloat> &second){
+	SubVector<BaseFloat> f = first;
 	f.MulElements(second);
 	return f.Sum();
 }

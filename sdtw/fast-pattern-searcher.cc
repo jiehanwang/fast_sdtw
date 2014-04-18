@@ -111,7 +111,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				const BaseFloat sim = CosineSimilarity(first_features.Row(row),
 																							 second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {
-					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
 				}
 			}
 		}
@@ -121,7 +121,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				const BaseFloat sim = DotProdSimilarity(first_features.Row(row),
 																							 	second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {
-					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
 				}
 			}
 		}
@@ -131,7 +131,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				const BaseFloat sim = KLSimilarity(first_features.Row(row),
 																					 second_features.Row(col));
 				if (sim >= config_.similarity_threshold) {
-					similarity_marix->SetSafe(std::make_pair(row, col), sim);
+					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
 				}
 			}
 		}
