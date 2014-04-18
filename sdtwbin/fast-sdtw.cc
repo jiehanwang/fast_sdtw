@@ -6,6 +6,7 @@
 
 #include "base/kaldi-common.h"
 #include "feat/feature-functions.h" // do I need this?
+#include "matrix/kaldi-matrix.h" // ditto
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"

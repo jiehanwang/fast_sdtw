@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "base/kaldi-common.h"
+#include "matrix/kaldi-matrix.h"
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"

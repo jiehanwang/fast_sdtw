@@ -4,7 +4,7 @@ include ../kaldi.mk
 
 TESTFILES = sdtw-utils-test fast-pattern-searcher-test
 
-OBJFILES = fast-pattern-searcher.o
+OBJFILES = sdtw-utils.o fast-pattern-searcher.o
 
 LIBNAME = kaldi-sdtw
 
