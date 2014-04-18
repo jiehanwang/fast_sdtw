@@ -113,9 +113,9 @@ template<class T> class SparseMatrix {
 
 		T Get(const std::pair<size_t, size_t> &coordinate) const {
 			T retval = T(0);
-			std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.find(coordinate);
+			typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.find(coordinate);
 			if (it != mat_.end()) {
-				retval = *it;
+				retval = it->second;
 			}
 			return retval;
 		}
@@ -128,9 +128,9 @@ template<class T> class SparseMatrix {
 			T retval = T(0);
 			if (coordinate.first >= 0 && coordinate.first < size_.first &&
 					coordinate.second >= 0 && coordinate.second < size_.second) {
-				std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.find(coordinate);
+				typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.find(coordinate);
 				if (it != mat_.end()) {
-					retval = *it;
+					retval = it->second;
 				}
 			}
 			return retval;

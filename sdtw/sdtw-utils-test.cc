@@ -46,11 +46,12 @@ void SparseMatrixIncrementTest() {
 	KALDI_ASSERT(matrix.GetSafe(1, 2) == 3);
 }
 
+}  // end namespace kaldi
+
 int main() {
+	using namespace kaldi;
 	SparseMatrixGetNonzerosTest();
 	SparseMatrixClampTest();
 	SparseMatrixIncrementTest();
 	std::cout << "sdtw-utils-test OK\n";
 }
-
-}  // end namespace kaldi
