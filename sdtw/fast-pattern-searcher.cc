@@ -463,7 +463,7 @@ void FastPatternSearcher::SDTWWarp(
 				path_similarities[index] = sim + sim_left;
 				path_decisions[index] = RIGHT;
 			} else {
-				KALDI_WARN << "No min similarity in DTW computation - this should not happen."
+				KALDI_WARN << "No min similarity in DTW computation - this should not happen.";
 			}
 		}
 	}
@@ -592,7 +592,9 @@ void FastPatternSearcher::WarpLinesToPaths(
 		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
 		Path trimmed_path;
 		MergeAndTrimPaths(path_to_midpoint, path_from_midpoint, &trimmed_path);
-		sdtw_paths->push_back(trimmed_path);
+		if (trimmed_path.path_points.size() >= config_.min_length) {
+			sdtw_paths->push_back(trimmed_path);
+		}
 	}
 }
 

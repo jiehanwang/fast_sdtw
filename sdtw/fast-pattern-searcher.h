@@ -24,6 +24,7 @@ struct FastPatternSearcherConfig {
 	int32 sdtw_width;
 	BaseFloat sdtw_budget;
 	BaseFloat sdtw_trim;
+	int32 min_length;
 
 	FastPatternSearcherConfig(): use_cosine(true), use_dotprod(false),
 		use_kl(false), similarity_threshold(.05), quantize_threshold(0.5),
@@ -55,9 +56,11 @@ struct FastPatternSearcherConfig {
 		po->Register("sdtw-trim", &sdtw_trim,
 				"Trim frames from the ends of each warp path whose similarity "
 				"falls below this threshold");
+		po->Register("min-length", &min_length,
+				"Throw away S-DTW paths shorter than this length")
 	}
 	void Check() const {
-		KALDI_ASSERT(quantize_threshold >= 0 && smoother_length > 0
+		KALDI_ASSERT(quantize_threshold >= 0 && smoother_length > 0 && min_length > 0
 								 && smoother_median >= 0 && smoother_median <= 1
 								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0
 								 && (use_cosine || use_dotprod || use_kl));
