@@ -58,18 +58,12 @@ bool FastPatternSearcher::Search(
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
-			KALDI_LOG << thresholded_raw_similarity_matrix.GetNonzeroElements().size() <<
-				" out of " << (first_features.NumRows() * second_features.NumRows()) << " elements are nonzero";
 			SparseMatrix<int32> quantized_similarity_matrix;
 			QuantizeMatrix(thresholded_raw_similarity_matrix,
 										 &quantized_similarity_matrix);
-			KALDI_LOG << quantized_similarity_matrix.GetNonzeroElements().size() <<
-				" elements are quantized to 1";
 			SparseMatrix<int32> median_smoothed_matrix;
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
 																	&median_smoothed_matrix);
-			KALDI_LOG << median_smoothed_matrix.GetNonzeroElements().size() <<
-				" elements remain after median smoothing";
 			SparseMatrix<BaseFloat> blurred_matrix;
 			const size_t kernel_radius = 1;
 			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
@@ -465,9 +459,11 @@ void FastPatternSearcher::SDTWWarp(
 			} else if (sim_up >= sim_diag && sim_up >= sim_left) {
 				path_similarities[index] = sim + sim_up;
 				path_decisions[index] = DOWN;
-			} else {
+			} else if (sim_left >= sim_up && sim_left >= sim_diag) {
 				path_similarities[index] = sim + sim_left;
 				path_decisions[index] = RIGHT;
+			} else {
+				KALDI_WARN << "No min similarity in DTW computation - this should not happen."
 			}
 		}
 	}
