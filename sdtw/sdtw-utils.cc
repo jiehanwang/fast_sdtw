@@ -68,10 +68,16 @@ BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
       << first.Dim() << " vs " << second.Dim();
 	}
   BaseFloat sum = 0.0;
+  BaseFloat mag1 = 0.0;
+  BaseFloat mag2 = 0.0;
   for (int32 i = 0; i < first.Dim(); ++i) {
     sum += first(i) * second(i);
+    mag1 += std::pow(first(i), 2);
+    mag2 += std::pow(second(i), 2);
   }
-  return sum;
+  mag1 = std::sqrt(mag1);
+  mag2 = std::sqrt(mag2);
+  return 0.5 * (1.0 + sum/(mag1 * mag2));
 /*
   SubVector<BaseFloat> f(first);
   SubVector<BaseFloat> s(second);
