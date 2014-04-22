@@ -90,9 +90,12 @@ bool FastPatternSearcher::Search(
 				first_utt << " and " << second_utt;
 			WritePaths(sdtw_paths, pattern_writer);
 			// For debugging
+			std::stringstream sstm;
+			sstm << "<" << first_id << "-" << second_id << ">";
+			const std::string key = sstm.str();
 			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
 			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
-			WriteOverlaidMatrix(thresholded_raw_similarity_matrix, sdtw_paths, &matrix_writer);
+			WriteOverlaidMatrix(thresholded_raw_similarity_matrix, sdtw_paths, key, &matrix_writer);
 		}
 	}
 	return true;
@@ -115,9 +118,10 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 			for (int32 col = 0; col < num_cols; ++col) {
 				const BaseFloat sim = CosineSimilarity(first_features.Row(row),
 																							 second_features.Row(col));
-				if (sim >= config_.similarity_threshold) {
+
+				//if (sim >= config_.similarity_threshold) {
 					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
-				}
+				//}
 			}
 		}
 	} else if (config_.use_dotprod) {
@@ -618,18 +622,18 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 void FastPatternSearcher::WriteOverlaidMatrix(
 	const SparseMatrix<BaseFloat> &similarity_matrix,
 	const std::vector<Path> sdtw_paths,
+	const std::string key,
 	SparseFloatMatrixWriter *matrix_writer) const {
 	KALDI_ASSERT(matrix_writer != NULL);
 	KALDI_ASSERT(matrix_writer->IsOpen());
-	SimilarityMatrix<BaseFloat> matrix = similarity_matrix;
-	for (int32 i = 0; i < sdtw_paths.size() ++i) {
+	SparseMatrix<BaseFloat> matrix = similarity_matrix;
+	for (int32 i = 0; i < sdtw_paths.size(); ++i) {
 		const Path &path = sdtw_paths[i];
 		for (int32 j = 0; j < path.path_points.size(); ++j) {
 			matrix.SetSafe(path.path_points[j], -1 * path.similarities[j]);
 		}
 	}
-	const std::string key = "MATRIX";
-	matrix_writer->Write(key, path);
+	matrix_writer->Write(key, matrix);
 }
 
 }  // end namespace kaldi

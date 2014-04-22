@@ -16,14 +16,14 @@
 
 namespace kaldi {
 
-BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
-												 	 const SubVector<BaseFloat> &second);
+BaseFloat CosineSimilarity(const Vector<BaseFloat> &first,
+												 	 const Vector<BaseFloat> &second);
 
-BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
-											 const SubVector<BaseFloat> &second);
+BaseFloat KLSimilarity(const Vector<BaseFloat> &first,
+											 const Vector<BaseFloat> &second);
 
-BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
-														const SubVector<BaseFloat> &second);
+BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first,
+														const Vector<BaseFloat> &second);
 
 struct Line {
 	std::pair<size_t, size_t> start;
@@ -180,7 +180,7 @@ template<class T> class SparseMatrix {
 				}
 				WriteToken(out_stream, binary, ";");
 			}
-			WriteToken(out_stream, binary, "];\n");
+			WriteToken(out_stream, binary, "];");
 		}
 
 	private:
