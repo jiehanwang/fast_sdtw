@@ -16,14 +16,14 @@
 
 namespace kaldi {
 
-BaseFloat CosineSimilarity(const VectorBase<BaseFloat> &first,
-												 	 const VectorBase<BaseFloat> &second);
+BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
+												 	 const SubVector<BaseFloat> &second);
 
-BaseFloat KLSimilarity(const VectorBase<BaseFloat> &first,
-											 const VectorBase<BaseFloat> &second);
+BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
+											 const SubVector<BaseFloat> &second);
 
-BaseFloat DotProdSimilarity(const VectorBase<BaseFloat> &first,
-														const VectorBase<BaseFloat> &second);
+BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
+														const SubVector<BaseFloat> &second);
 
 struct Line {
 	std::pair<size_t, size_t> start;
