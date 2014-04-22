@@ -61,14 +61,15 @@ void Path::Write(std::ostream &out_stream, bool binary) const {
   }
 }
 
-BaseFloat CosineSimilarity(const Vector<BaseFloat> &first,
-													 const Vector<BaseFloat> &second){
+BaseFloat CosineSimilarity(const VectorBase<BaseFloat> &first,
+													 const VectorBase<BaseFloat> &second){
   if (first.Dim() != second.Dim()) {
     KALDI_ERR << "Dim mismatch in CosineSimilarity computation: "
       << first.Dim() << " vs " << second.Dim();
 	}
-  Vector<BaseFloat> f = first;
-	Vector<BaseFloat> s = second;
+  VectorBase<BaseFloat> f, s;
+	f.CopyFromVec(first);
+  s.CopyFromVec(second);
 	f.Scale(1.0 / f.Norm(2));
 	s.Scale(1.0 / f.Norm(2));
 	f.MulElements(s);
@@ -76,15 +77,16 @@ BaseFloat CosineSimilarity(const Vector<BaseFloat> &first,
 
 }
 
-BaseFloat KLSimilarity(const Vector<BaseFloat> &first,
-											 const Vector<BaseFloat> &second){
+BaseFloat KLSimilarity(const VectorBase<BaseFloat> &first,
+											 const VectorBase<BaseFloat> &second){
 	// TODO: Implement this.
 	return 0.0;
 }
 
-BaseFloat DotProdSimilarity(const Vector<BaseFloat> &first,
-														const Vector<BaseFloat> &second){
-	Vector<BaseFloat> f = first;
+BaseFloat DotProdSimilarity(const VectorBase<BaseFloat> &first,
+														const VectorBase<BaseFloat> &second){
+	VectorBase<BaseFloat> f;
+  f.CopyFromVec(first);
 	f.MulElements(second);
 	return f.Sum();
 }
