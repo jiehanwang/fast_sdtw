@@ -167,10 +167,29 @@ template<class T> class SparseMatrix {
 			return IncrementSafe(std::make_pair(row, col), increment);
 		}
 
+		void Read(std::istream &in_stream, bool binary) {
+			return;
+		}
+
+		void Write(std::ostream &out_stream, bool binary) const {
+			WriteToken(out_stream, binary, "[");
+			for (int32 row = 0; row < size_.first; ++row) {
+				for (int32 col = 0; col < size_.second; ++col) {
+					T val = GetSafe(std::make_pair(row, col));
+					WriteBasicType(out_stream, binary, val);
+				}
+				WriteToken(out_stream, binary, ";");
+			}
+			WriteToken(out_stream, binary, "];\n");
+		}
+
 	private:
 		std::pair<size_t, size_t> size_;
 		std::map< std::pair<size_t, size_t>, T > mat_;
 };
+
+typedef TableWriter<KaldiObjectHolder<SparseMatrix<BaseFloat> > SparseFloatMatrixWriter;
+typedef TableWriter<KaldiObjectHolder<SparseMatrix<int32> > SparseIntMatrixWriter;
 
 }  // end namespace kaldi
 

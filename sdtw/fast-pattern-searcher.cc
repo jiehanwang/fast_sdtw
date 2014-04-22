@@ -89,6 +89,10 @@ bool FastPatternSearcher::Search(
 			KALDI_LOG << "Found " << sdtw_paths.size() << " patterns between " << 
 				first_utt << " and " << second_utt;
 			WritePaths(sdtw_paths, pattern_writer);
+			// For debugging
+			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
+			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
+			WriteOverlaidMatrix(thresholded_raw_similarity_matrix, sdtw_paths, &matrix_writer);
 		}
 	}
 	return true;
@@ -610,5 +614,22 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 		writer->Write(key, path);
 	}
 } 
+
+void FastPatternSearcher::WriteOverlaidMatrix(
+	const SimilarityMatrix<BaseFloat> &similarity_matrix,
+	const std::vector<Path> sdtw_paths,
+	SparseFloatMatrixWriter *matrix_writer) const {
+	KALDI_ASSERT(matrix_writer != NULL);
+	KALDI_ASSERT(matrix_writer->IsOpen());
+	SimilarityMatrix<BaseFloat> matrix = similarity_matrix;
+	for (int32 i = 0; i < sdtw_paths.size() ++i) {
+		const Path &path = sdtw_paths[i];
+		for (int32 j = 0; j < path.path_points.size(); ++j) {
+			matrix.SetSafe(path.path_points[j], -1 * path.similarities[j]);
+		}
+	}
+	const std::string key = "MATRIX";
+	matrix_writer->Write(key, path);
+}
 
 }  // end namespace kaldi
