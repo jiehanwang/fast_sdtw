@@ -67,12 +67,18 @@ BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
     KALDI_ERR << "Dim mismatch in CosineSimilarity computation: "
       << first.Dim() << " vs " << second.Dim();
 	}
+  BaseFloat sum = 0.0;
+  for (int32 i = 0; i < first.Dim(); ++i) {
+    sum += first(i) * second(i);
+  }
+  return sum;
+/*
   SubVector<BaseFloat> f(first);
   SubVector<BaseFloat> s(second);
 	//f.Scale(1.0 / f.Norm(2));
 	//s.Scale(1.0 / f.Norm(2));
 	f.MulElements(s);
-	return f.Sum();
+	return f.Sum();*/
 }
 
 BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
