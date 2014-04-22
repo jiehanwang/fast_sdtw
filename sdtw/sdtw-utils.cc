@@ -69,8 +69,8 @@ BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
 	}
   SubVector<BaseFloat> f(first);
   SubVector<BaseFloat> s(second);
-	f.Scale(1.0 / f.Norm(2));
-	s.Scale(1.0 / f.Norm(2));
+	//f.Scale(1.0 / f.Norm(2));
+	//s.Scale(1.0 / f.Norm(2));
 	f.MulElements(s);
 	return f.Sum();
 }

@@ -91,7 +91,7 @@ bool FastPatternSearcher::Search(
 			WritePaths(sdtw_paths, pattern_writer);
 			// For debugging
 			std::stringstream sstm;
-			sstm << "<" << first_id << "-" << second_id << ">";
+			sstm << "<" << first_utt << "-" << second_utt << ">";
 			const std::string key = sstm.str();
 			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
 			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
