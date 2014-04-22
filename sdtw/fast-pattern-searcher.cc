@@ -616,7 +616,7 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 } 
 
 void FastPatternSearcher::WriteOverlaidMatrix(
-	const SimilarityMatrix<BaseFloat> &similarity_matrix,
+	const SparseMatrix<BaseFloat> &similarity_matrix,
 	const std::vector<Path> sdtw_paths,
 	SparseFloatMatrixWriter *matrix_writer) const {
 	KALDI_ASSERT(matrix_writer != NULL);

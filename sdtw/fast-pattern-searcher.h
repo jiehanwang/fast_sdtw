@@ -151,7 +151,7 @@ public:
 									PathWriter *writer) const;
 
 	void FastPatternSearcher::WriteOverlaidMatrix(
-	const SimilarityMatrix<BaseFloat> &similarity_matrix,
+	const SparseMatrix<BaseFloat> &similarity_matrix,
 	const std::vector<Path> sdtw_paths, SparseFloatMatrixWriter *matrix_writer) const;
 
 private:

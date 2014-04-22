@@ -188,8 +188,8 @@ template<class T> class SparseMatrix {
 		std::map< std::pair<size_t, size_t>, T > mat_;
 };
 
-typedef TableWriter<KaldiObjectHolder<SparseMatrix<BaseFloat> > SparseFloatMatrixWriter;
-typedef TableWriter<KaldiObjectHolder<SparseMatrix<int32> > SparseIntMatrixWriter;
+typedef TableWriter<KaldiObjectHolder<SparseMatrix<BaseFloat> > > SparseFloatMatrixWriter;
+typedef TableWriter<KaldiObjectHolder<SparseMatrix<int32> > > SparseIntMatrixWriter;
 
 }  // end namespace kaldi
 
