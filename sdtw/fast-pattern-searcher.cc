@@ -492,7 +492,7 @@ void FastPatternSearcher::SDTWWarp(
 	path->similarities.push_back(
 		similarity_matrix.GetSafe(std::make_pair(backtrace_row, backtrace_col)));
 	path->path_points.push_back(std::make_pair(backtrace_row, backtrace_col));;
-	while (backtrace_row != start_row && backtrace_col != start_col) {
+	while (backtrace_row != start_row || backtrace_col != start_col) {
 		switch(path_decisions[std::make_pair(backtrace_row, backtrace_col)]) {
 			case DOWN:
 				backtrace_row--;
@@ -612,10 +612,12 @@ void FastPatternSearcher::WarpLinesToPaths(
 		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
 		if (path_to_midpoint.path_points.size() > 0 &&
 				path_from_midpoint.path_points.size() > 0) {
-			KALDI_ASSERT(path_to_midpoint.path_points.back().first ==
+			if(!(path_to_midpoint.path_points.back().first ==
 									 path_from_midpoint.path_points.front().first &&
 									 path_to_midpoint.path_points.back().second ==
-									 path_from_midpoint.path_points.front().second);
+									 path_from_midpoint.path_points.front().second)){
+
+			}
 		}
 		Path trimmed_path;
 		MergeAndTrimPaths(path_to_midpoint, path_from_midpoint, &trimmed_path);
