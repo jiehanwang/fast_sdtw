@@ -91,9 +91,9 @@ bool FastPatternSearcher::Search(
 			//KALDI_LOG << "Scanning diagonals...";
 			ScanDiagsForLines(blurred_matrix, peak_locations, &line_locations);
 			std::vector<Line> filtered_line_locations;
-			const BaseFloat block_filter_threshold = 0.75;
+			const BaseFloat block_filter_threshold = 0.55;
 			//KALDI_LOG << "Filtering block lines...";
-			FilterBlockLines(quantized_similarity_matrix, line_locations,
+			FilterBlockLines(thresholded_raw_similarity_matrix, line_locations,
 											 block_filter_threshold, &filtered_line_locations);
 			std::vector<Path> sdtw_paths;
 			//KALDI_LOG << "Warping lines to paths...";
@@ -135,7 +135,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	prod.AddMatMat(1.0, first_features, kNoTrans, second_features, kTrans, 0.0);
 	for (int32 row = 0; row < num_rows; ++row) {
 		for (int32 col = 0; col < num_cols; ++col) {
-				similarity_matrix->SetSafe(std::make_pair(row, col), prod(row,col));
+				similarity_matrix->SetSafe(std::make_pair(row, col), 0.5*(1 + prod(row,col));
 		}
 	}
 }
@@ -396,7 +396,7 @@ void FastPatternSearcher::ScanDiagsForLines(
 }
 
 void FastPatternSearcher::FilterBlockLines(
-				const SparseMatrix<int32> &similarity_matrix,
+				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const {

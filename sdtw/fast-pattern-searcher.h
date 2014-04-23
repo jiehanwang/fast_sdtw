@@ -76,7 +76,7 @@ public:
 							PathWriter *pattern_writer) const;
 
 	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> &features) const;
-	
+
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
@@ -120,7 +120,7 @@ public:
 				std::vector<Line> *line_locations) const;
 
 	void FilterBlockLines(
-				const SparseMatrix<int32> &similarity_matrix,
+				const SparseMatrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const;
