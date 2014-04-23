@@ -616,7 +616,11 @@ void FastPatternSearcher::WarpLinesToPaths(
 									 path_from_midpoint.path_points.front().first &&
 									 path_to_midpoint.path_points.back().second ==
 									 path_from_midpoint.path_points.front().second)){
-
+				KALDI_LOG << "midpoint=" << midpoint_row << "," << midpoint_col <<
+				" to_mid=" << path_to_midpoint.path_points.back().first <<
+				"," << path_to_midpoint.path_points.back().second << " from_mid=" <<
+				path_from_midpoint.path_points.front().first << "," <<
+				path_from_midpoint.path_points.front().second;
 			}
 		}
 		Path trimmed_path;
