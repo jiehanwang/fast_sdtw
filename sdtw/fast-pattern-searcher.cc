@@ -456,16 +456,20 @@ void FastPatternSearcher::SDTWWarp(
 													 std::abs(input_size.first - start_row -
 													 					input_size.second - start_col));
 	// Initialize path_similarities map with BIG_NEG
-	for (int32 row = start_row - 1; row <= end_row; ++row) {
-		for (int32 col = row - w - 1; col <= row + w + 1; ++col) {
+	for (int32 offset_row = -1; offset_row <= end_row - start_row; ++offset_row) {
+		for (int32 offset_col = offset_row - w - 1; offset_col <= offset_row + w + 1; ++offset_col) {
+			const int32 row = offset_row + start_row;
+			const int32 col = offset_col + start_col;
 			path_similarities[std::make_pair(row, col)] = BIG_NEG;
 		}
 	}
 	// Fill in the DTW distance table
 	path_similarities[std::make_pair(start_row - 1, start_col - 1)] = 0; 
-	for (int32 row = start_row; row <= end_row; ++row) {
-		for (int32 col = std::max(0, row - w);
-				 col <= std::min(end_col, row + w); ++col) {
+	for (int32 offset_row = 0; offset_row <= end_row - start_row; ++offset_row) {
+		for (int32 offset_col = std::max(0, offset_row - w);
+				 offset_col <= std::min(end_col - start_col, offset_row + w); ++offset_col) {
+			const int32 row = offset_row + start_row;
+			const int32 col = offset_col + start_col;
 			const BaseFloat sim = similarity_matrix.GetSafe(std::make_pair(row, col));
 			const BaseFloat sim_up = path_similarities[std::make_pair(row - 1, col)];
 			const BaseFloat sim_left = path_similarities[std::make_pair(row, col - 1)];
