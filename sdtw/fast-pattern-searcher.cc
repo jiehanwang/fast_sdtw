@@ -540,9 +540,9 @@ void FastPatternSearcher::MergeAndTrimPaths(
 		}
 	}
 	std::reverse(path.begin(), path.end());
-	KALDI_ASSERT(path[path.size()].first.first == second_half.path_points[0].first
+	/*KALDI_ASSERT(path[path.size()].first.first == second_half.path_points[0].first
 		&& path[path.size()].first.second == second_half.path_points[0].second);
-	path.pop_back();
+	path.pop_back();*/
 	BaseFloat second_distortion_eaten = 0.0;
 	for (int i = 0; i < second_half.path_points.size(); ++i) {
 		const std::pair<size_t, size_t> &point = second_half.path_points[i];
