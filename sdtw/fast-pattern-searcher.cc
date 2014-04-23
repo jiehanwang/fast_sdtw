@@ -67,29 +67,36 @@ bool FastPatternSearcher::Search(
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
-			KALDI_LOG << "Done.";
+			KALDI_LOG << "Quantizing matrix...";
 			SparseMatrix<int32> quantized_similarity_matrix;
 			QuantizeMatrix(thresholded_raw_similarity_matrix,
 										 &quantized_similarity_matrix);
 			SparseMatrix<int32> median_smoothed_matrix;
+			KALDI_LOG << "Median smoothing matrix...";
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
 																	&median_smoothed_matrix);
 			SparseMatrix<BaseFloat> blurred_matrix;
 			const size_t kernel_radius = 1;
+			KALDI_LOG << "Blurring matrix..."
 			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
 																&blurred_matrix);
 			std::vector<BaseFloat> hough_transform;
+			KALDI_LOG << "Computing Hough transform...";
 			ComputeDiagonalHoughTransform(blurred_matrix, &hough_transform);
 			std::vector<int32> peak_locations;
 			const BaseFloat peak_delta = 0.25;
+			KALDI_LOG << "Picking peaks...";
 			PickPeaksInVector(hough_transform, peak_delta, &peak_locations);
 			std::vector<Line> line_locations;
+			KALDI_LOG << "Scanning diagonals...";
 			ScanDiagsForLines(blurred_matrix, peak_locations, &line_locations);
 			std::vector<Line> filtered_line_locations;
 			const BaseFloat block_filter_threshold = 0.75;
+			KALDI_LOG << "Filtering block lines...";
 			FilterBlockLines(quantized_similarity_matrix, line_locations,
 											 block_filter_threshold, &filtered_line_locations);
 			std::vector<Path> sdtw_paths;
+			KALDI_LOG << "Warping lines to paths...";
 			WarpLinesToPaths(thresholded_raw_similarity_matrix,
 											 filtered_line_locations, &sdtw_paths);
 			for (int32 i = 0; i < sdtw_paths.size(); ++i) {
