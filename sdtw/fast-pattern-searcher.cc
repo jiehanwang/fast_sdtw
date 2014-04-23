@@ -439,9 +439,9 @@ void FastPatternSearcher::SDTWWarp(
 	// Ok, so I would like to use an enum here to represent the DTW move types,
 	// But templating on locally defined enums is bad news. So, I am just going
 	// to use int32s. Todo: Figure out a better way to do this.
-	const int32 DOWN = 0;
-	const int32 RIGHT = 1;
-	const int32 DIAG = 2;
+	const int32 DOWN = 1;
+	const int32 RIGHT = 2;
+	const int32 DIAG = 3;
 	std::pair<int32, int32> input_size = similarity_matrix.GetSize();
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
@@ -492,7 +492,10 @@ void FastPatternSearcher::SDTWWarp(
 	path->similarities.push_back(
 		similarity_matrix.GetSafe(std::make_pair(backtrace_row, backtrace_col)));
 	path->path_points.push_back(std::make_pair(backtrace_row, backtrace_col));;
-	while (backtrace_row != start_row || backtrace_col != start_col) {
+	while (backtrace_row >= start_row && backtrace_col >= start_col) {
+		if (backtrace_row == start_row && backtrace_col == start_col) {
+			break;
+		}
 		switch(path_decisions[std::make_pair(backtrace_row, backtrace_col)]) {
 			case DOWN:
 				backtrace_row--;
@@ -505,7 +508,7 @@ void FastPatternSearcher::SDTWWarp(
 				backtrace_col--;
 				break;
 			default:
-				KALDI_WARN << "Warning: SDTW warp backtrace failed.";
+				KALDI_LOG << "Warning: SDTW warp backtrace failed.";
 				break;
 		}
 		const std::pair<size_t, size_t> idx = 
@@ -550,9 +553,6 @@ void FastPatternSearcher::MergeAndTrimPaths(
 		}
 	}
 	std::reverse(path.begin(), path.end());
-	/*KALDI_ASSERT(path[path.size()].first.first == second_half.path_points[0].first
-		&& path[path.size()].first.second == second_half.path_points[0].second);
-	path.pop_back();*/
 	BaseFloat second_distortion_eaten = 0.0;
 	for (int i = 0; i < second_half.path_points.size(); ++i) {
 		const std::pair<size_t, size_t> &point = second_half.path_points[i];
