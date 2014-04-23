@@ -47,9 +47,11 @@ bool FastPatternSearcher::Search(
 
 	// L2 normalize all feature vectors.
 	std::vector<Matrix<BaseFloat> > normalized_features;
+	KALDI_LOG << "Normalizing features for " << utt_features.size() << " utterances";
 	for (int32 i = 0; i < utt_features.size(); ++i) {
-		normalized_features.push_back(L2NormalizeFeatures(utt_features));
+		normalized_features.push_back(L2NormalizeFeatures(utt_features[i]));
 	}
+	KALDI_LOG << "Done normalizing";
 	for (int i = 0; i < utt_features.size() - 1; ++i) {
 		for (int j = i + 1; j < utt_features.size(); ++j) {
 			const Matrix<BaseFloat> &first_features = normalized_features[i];
@@ -61,9 +63,11 @@ bool FastPatternSearcher::Search(
 			//TODO: Unit tests for everything!
 			//TODO: Perhaps make peak_delta, kernel_radius, block_filter_threshold
 			//      arguments/options
+			KALDI_LOG << "Computing similarity matrix...";
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
 																				 &thresholded_raw_similarity_matrix);
+			KALDI_LOG << "Done.";
 			SparseMatrix<int32> quantized_similarity_matrix;
 			QuantizeMatrix(thresholded_raw_similarity_matrix,
 										 &quantized_similarity_matrix);
@@ -157,7 +161,7 @@ Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
 	}
 	// Scale each row by its magnitude
 	normalized_features.MulRowsVec(row_mags);
-	return normalized_feats;
+	return normalized_features;
 }
 
 void FastPatternSearcher::ApplyMedianSmootherToMatrix(
