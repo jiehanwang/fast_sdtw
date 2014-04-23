@@ -75,8 +75,8 @@ public:
 							const std::vector<std::string> &utt_ids,
 							PathWriter *pattern_writer) const;
 
-	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> features) const;
-
+	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> &features) const;
+	
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,

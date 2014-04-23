@@ -120,11 +120,9 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	int32 num_cols = second_features.NumRows();
 	Matrix<BaseFloat> prod(size.first, size.second);
 	prod.AddMatMat(1.0, first_features, kNoTrans, second_features, kTrans, 0.0);
-	if (config_.use_cosine) {
-		for (int32 row = 0; row < num_rows; ++row) {
-			for (int32 col = 0; col < num_cols; ++col) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), prod(row,col));
-			}
+	for (int32 row = 0; row < num_rows; ++row) {
+		for (int32 col = 0; col < num_cols; ++col) {
+				similarity_matrix->SetSafe(std::make_pair(row, col), prod(row,col));
 		}
 	}
 }
@@ -146,19 +144,19 @@ void FastPatternSearcher::QuantizeMatrix(
 }
 
 Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
-	const Matrix<BaseFloat> features) const {
-	Matrix<BaseFloat> normalized_feats(features);
+	const Matrix<BaseFloat> &features) const {
+	Matrix<BaseFloat> normalized_features(features);
 	// Compute row magnitudes
 	Vector<BaseFloat> row_mags(features.NumRows());
 	for (MatrixIndexT row = 0; row < normalized_features.NumRows(); ++row) {
-		BaseFloat mag = 0.0
+		BaseFloat mag = 0.0;
 		for (MatrixIndexT col = 0; col < normalized_features.NumCols(); ++col) {
 			mag += std::pow(normalized_features(row, col), 2);
 		}
 		row_mags(row) = std::sqrt(mag);
 	}
 	// Scale each row by its magnitude
-	normalized_feats.MulRowsVec(row_mags);
+	normalized_features.MulRowsVec(row_mags);
 	return normalized_feats;
 }
 
