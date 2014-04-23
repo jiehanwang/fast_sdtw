@@ -610,7 +610,8 @@ void FastPatternSearcher::WarpLinesToPaths(
 		Path path_from_midpoint;
 		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
 		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
-		if (path_to_midpoint.path_points.size() > 0 && path_from_midpoint.path_points.size() > ) {
+		if (path_to_midpoint.path_points.size() > 0 &&
+				path_from_midpoint.path_points.size() > 0) {
 			KALDI_ASSERT(path_to_midpoint.path_points.back().first ==
 									 path_from_midpoint.path_points.front().first &&
 									 path_to_midpoint.path_points.back().second ==
