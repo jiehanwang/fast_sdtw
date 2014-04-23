@@ -453,7 +453,8 @@ void FastPatternSearcher::SDTWWarp(
 	std::map<std::pair<int32, int32>, BaseFloat> path_similarities;
 	// Need to fix w to handle variable start and end points
 	const int32 w = std::max(config_.sdtw_width,
-													 std::abs(input_size.first - input_size.second));
+													 std::abs(input_size.first - start_row -
+													 					input_size.second - start_col));
 	// Initialize path_similarities map with BIG_NEG
 	for (int32 row = start_row - 1; row <= end_row; ++row) {
 		for (int32 col = row - w - 1; col <= row + w + 1; ++col) {
