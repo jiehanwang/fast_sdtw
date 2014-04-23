@@ -77,7 +77,7 @@ bool FastPatternSearcher::Search(
 																	&median_smoothed_matrix);
 			SparseMatrix<BaseFloat> blurred_matrix;
 			const size_t kernel_radius = 1;
-			KALDI_LOG << "Blurring matrix..."
+			KALDI_LOG << "Blurring matrix...";
 			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
 																&blurred_matrix);
 			std::vector<BaseFloat> hough_transform;
@@ -156,6 +156,7 @@ void FastPatternSearcher::QuantizeMatrix(
 
 Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
 	const Matrix<BaseFloat> &features) const {
+	const BaseFloat epsilon = 0.000000001;
 	Matrix<BaseFloat> normalized_features(features);
 	// Compute row magnitudes
 	Vector<BaseFloat> row_mags(features.NumRows());
@@ -164,7 +165,7 @@ Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
 		for (MatrixIndexT col = 0; col < normalized_features.NumCols(); ++col) {
 			mag += std::pow(normalized_features(row, col), 2);
 		}
-		row_mags(row) = std::sqrt(mag);
+		row_mags(row) = 1.0 / (epsilon + std::sqrt(mag));
 	}
 	// Scale each row by its magnitude
 	normalized_features.MulRowsVec(row_mags);
