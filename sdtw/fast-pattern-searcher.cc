@@ -610,10 +610,12 @@ void FastPatternSearcher::WarpLinesToPaths(
 		Path path_from_midpoint;
 		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
 		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
-		KALDI_ASSERT(path_to_midpoint.path_points.back().first ==
-								 path_from_midpoint.path_points.front().first &&
-								 path_to_midpoint.path_points.back().second ==
-								 path_from_midpoint.path_points.front().second);
+		if (path_to_midpoint.path_points.size() > 0 && path_from_midpoint.path_points.size() > ) {
+			KALDI_ASSERT(path_to_midpoint.path_points.back().first ==
+									 path_from_midpoint.path_points.front().first &&
+									 path_to_midpoint.path_points.back().second ==
+									 path_from_midpoint.path_points.front().second);
+		}
 		Path trimmed_path;
 		MergeAndTrimPaths(path_to_midpoint, path_from_midpoint, &trimmed_path);
 		if (trimmed_path.path_points.size() >= config_.min_length) {
@@ -626,7 +628,6 @@ void FastPatternSearcher::WritePaths(const std::vector<Path> &sdtw_paths,
 									 									 PathWriter *writer) const {
 	KALDI_ASSERT(writer != NULL);
 	KALDI_ASSERT(writer->IsOpen());
-	KALDI_LOG << "Writing " << sdtw_paths.size() << " patterns.";
 	for (int32 i = 0; i < sdtw_paths.size(); ++i) {
 		const Path &path = sdtw_paths[i];
 		std::stringstream sstm;
