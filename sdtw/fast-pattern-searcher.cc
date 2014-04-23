@@ -44,10 +44,16 @@ bool FastPatternSearcher::Search(
 	// TODO: I should probably precompute normalized features (e.g. L2
 	//       normalize each row of each feature matrix if using cosine
 	//       similarity) for the sake of efficiency.
+
+	// L2 normalize all feature vectors.
+	std::vector<Matrix<BaseFloat> > normalized_features;
+	for (int32 i = 0; i < utt_features.size(); ++i) {
+		normalized_features.push_back(L2NormalizeFeatures(utt_features));
+	}
 	for (int i = 0; i < utt_features.size() - 1; ++i) {
 		for (int j = i + 1; j < utt_features.size(); ++j) {
-			const Matrix<BaseFloat> &first_features = utt_features[i];
-			const Matrix<BaseFloat> &second_features = utt_features[j];
+			const Matrix<BaseFloat> &first_features = normalized_features[i];
+			const Matrix<BaseFloat> &second_features = normalized_features[j];
 			const std::string first_utt = utt_ids[i];
 			const std::string second_utt = utt_ids[j];
 			//TODO: Implement these methods as well as SparseMatrix, Line, Path,
@@ -110,42 +116,16 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	const std::pair<int32, int32> size =
 		std::make_pair<int32, int32>(first_features.NumRows(), second_features.NumRows());
 	similarity_matrix->SetSize(size);
-	// TODO: finish this method.
 	int32 num_rows = first_features.NumRows();
 	int32 num_cols = second_features.NumRows();
+	Matrix<BaseFloat> prod(size.first, size.second);
+	prod.AddMatMat(1.0, first_features, kNoTrans, second_features, kTrans, 0.0);
 	if (config_.use_cosine) {
 		for (int32 row = 0; row < num_rows; ++row) {
 			for (int32 col = 0; col < num_cols; ++col) {
-				const BaseFloat sim = CosineSimilarity(first_features.Row(row),
-																							 second_features.Row(col));
-
-				//if (sim >= config_.similarity_threshold) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
-				//}
+					similarity_matrix->SetSafe(std::make_pair(row, col), prod(row,col));
 			}
 		}
-	} else if (config_.use_dotprod) {
-		for (int32 row = 0; row < num_rows; ++row) {
-			for (int32 col = 0; col < num_cols; ++col) {
-				const BaseFloat sim = DotProdSimilarity(first_features.Row(row),
-																							 	second_features.Row(col));
-				if (sim >= config_.similarity_threshold) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
-				}
-			}
-		}
-	} else if (config_.use_kl) {
-		for (int32 row = 0; row < num_rows; ++row) {
-			for (int32 col = 0; col < num_cols; ++col) {
-				const BaseFloat sim = KLSimilarity(first_features.Row(row),
-																					 second_features.Row(col));
-				if (sim >= config_.similarity_threshold) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
-				}
-			}
-		}
-	} else {
-		KALDI_WARN << "Warning: no distance measure specified.";
 	}
 }
 
@@ -163,6 +143,23 @@ void FastPatternSearcher::QuantizeMatrix(
 			quantized_matrix->Set(coordinate, 1);
 		}
 	}
+}
+
+Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
+	const Matrix<BaseFloat> features) const {
+	Matrix<BaseFloat> normalized_feats(features);
+	// Compute row magnitudes
+	Vector<BaseFloat> row_mags(features.NumRows());
+	for (MatrixIndexT row = 0; row < normalized_features.NumRows(); ++row) {
+		BaseFloat mag = 0.0
+		for (MatrixIndexT col = 0; col < normalized_features.NumCols(); ++col) {
+			mag += std::pow(normalized_features(row, col), 2);
+		}
+		row_mags(row) = std::sqrt(mag);
+	}
+	// Scale each row by its magnitude
+	normalized_feats.MulRowsVec(row_mags);
+	return normalized_feats;
 }
 
 void FastPatternSearcher::ApplyMedianSmootherToMatrix(
@@ -541,8 +538,11 @@ void FastPatternSearcher::MergeAndTrimPaths(
 		}
 	}
 	std::reverse(path.begin(), path.end());
+	KALDI_ASSERT(path[path.size()].first.first == second_half.path_points[0].first
+		&& path[path.size()].first.second == second_half.path_points[0].second);
+	path.pop_back();
 	BaseFloat second_distortion_eaten = 0.0;
-	for (int i = second_half.path_points.size() - 1; i >= 0; --i) {
+	for (int i = 0; i < second_half.path_points.size(); ++i) {
 		const std::pair<size_t, size_t> &point = second_half.path_points[i];
 		const BaseFloat &similarity = first_half.similarities[i];
 		BaseFloat new_distortion = second_distortion_eaten + (1 - similarity);

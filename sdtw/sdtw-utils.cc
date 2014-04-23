@@ -87,17 +87,4 @@ BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
 	return f.Sum();*/
 }
 
-BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
-											 const SubVector<BaseFloat> &second){
-	// TODO: Implement this.
-	return 0.0;
-}
-
-BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
-														const SubVector<BaseFloat> &second){
-	SubVector<BaseFloat> f(first);
-	f.MulElements(second);
-	return f.Sum();
-}
-
 }  // end namespace kaldi

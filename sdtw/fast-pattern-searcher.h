@@ -14,9 +14,6 @@
 namespace kaldi {
 
 struct FastPatternSearcherConfig {
-	bool use_cosine;
-	bool use_dotprod;
-	bool use_kl;
 	BaseFloat similarity_threshold;
 	BaseFloat quantize_threshold;
 	int32 smoother_length;
@@ -26,19 +23,11 @@ struct FastPatternSearcherConfig {
 	BaseFloat sdtw_trim;
 	int32 min_length;
 
-	FastPatternSearcherConfig(): use_cosine(true), use_dotprod(false),
-		use_kl(false), similarity_threshold(.05), quantize_threshold(0.5),
+	FastPatternSearcherConfig(): similarity_threshold(.05), quantize_threshold(0.5),
 		smoother_length(7), smoother_median(0.5), sdtw_width(10),
 		sdtw_budget(7.0), sdtw_trim(0.1), min_length(30) {}
 
 	void Register(OptionsItf *po) {
-		po->Register("use-cosine", &use_cosine,
-				"Use cosine similarity between frames. Behavior may be "
-				"unpredictable when multiple similarity measures are specified.");
-		po->Register("use-dotprod", &use_dotprod,
-				"Use dot product similarity between frames");
-		po->Register("use-kl", &use_kl,
-				"Use KL similarity between frames");
 		po->Register("similarity-threshold", &similarity_threshold,
 					 "Similarities below this threshold are set to 0");
 		po->Register("quantize-threshold", &quantize_threshold,
@@ -62,8 +51,7 @@ struct FastPatternSearcherConfig {
 	void Check() const {
 		KALDI_ASSERT(quantize_threshold >= 0 && smoother_length > 0 && min_length > 0
 								 && smoother_median >= 0 && smoother_median <= 1
-								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0
-								 && (use_cosine || use_dotprod || use_kl));
+								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0);
 	}
 };
 
@@ -86,6 +74,8 @@ public:
 	bool Search(const std::vector<Matrix<BaseFloat> > &utt_features,
 							const std::vector<std::string> &utt_ids,
 							PathWriter *pattern_writer) const;
+
+	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> features) const;
 
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,

@@ -19,12 +19,6 @@ namespace kaldi {
 BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
 												 	 const SubVector<BaseFloat> &second);
 
-BaseFloat KLSimilarity(const SubVector<BaseFloat> &first,
-											 const SubVector<BaseFloat> &second);
-
-BaseFloat DotProdSimilarity(const SubVector<BaseFloat> &first,
-														const SubVector<BaseFloat> &second);
-
 struct Line {
 	std::pair<size_t, size_t> start;
 	std::pair<size_t, size_t> end;
