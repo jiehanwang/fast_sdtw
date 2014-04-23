@@ -480,7 +480,7 @@ void FastPatternSearcher::SDTWWarp(
 				path_similarities[index] = sim + sim_left;
 				path_decisions[index] = RIGHT;
 			} else {
-				KALDI_WARN << "No min similarity in DTW computation - this should not happen.";
+				KALDI_ERR << "No min similarity in DTW computation - this should not happen.";
 			}
 		}
 	}
@@ -508,7 +508,10 @@ void FastPatternSearcher::SDTWWarp(
 				backtrace_col--;
 				break;
 			default:
-				KALDI_LOG << "Warning: SDTW warp backtrace failed.";
+				KALDI_LOG << "start=" << start_row << "," << start_col <<
+				" end=" << end_row << "," << end_col << " end decision=" <<
+				path_decisions[std::make_pair(end_row, end_col)];
+				KALDI_ERR << "Warning: SDTW warp backtrace failed.";
 				break;
 		}
 		const std::pair<size_t, size_t> idx = 
