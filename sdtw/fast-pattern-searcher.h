@@ -125,7 +125,8 @@ public:
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const;
 
-	void SDTWWarp(const SparseMatrix<BaseFloat> &similarity_matrix,
+	void SDTWWarp(const Matrix<BaseFloat> &first_features,
+								const Matrix<BaseFloat> &second_features,
 								const std::pair<size_t, size_t> &start_point,
 				  			const std::pair<size_t, size_t> &end_point, Path *path) const;
 
@@ -133,7 +134,8 @@ public:
 						   Path *result) const;
 
 	void WarpLinesToPaths(
-				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const Matrix<BaseFloat> &first_features,
+				const Matrix<BaseFloat> &second_features,
 				const std::vector<Line> &line_locations,
 				std::vector<Path> *sdtw_paths) const;
 

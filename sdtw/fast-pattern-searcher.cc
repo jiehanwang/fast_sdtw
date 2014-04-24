@@ -97,7 +97,7 @@ bool FastPatternSearcher::Search(
 											 block_filter_threshold, &filtered_line_locations);
 			std::vector<Path> sdtw_paths;
 			//KALDI_LOG << "Warping lines to paths...";
-			WarpLinesToPaths(thresholded_raw_similarity_matrix,
+			WarpLinesToPaths(first_features, second_features,
 											 filtered_line_locations, &sdtw_paths);
 			for (int32 i = 0; i < sdtw_paths.size(); ++i) {
 				sdtw_paths[i].first_id = first_utt;
@@ -137,7 +137,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 		for (int32 col = 0; col < num_cols; ++col) {
 				BaseFloat sim = 0.5 * (1 + prod(row, col));
 				if (sim >= config_.similarity_threshold) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), 0.5*(1 + prod(row,col)));
+					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
 				}
 		}
 	}
@@ -434,7 +434,8 @@ void FastPatternSearcher::FilterBlockLines(
 }
 
 void FastPatternSearcher::SDTWWarp(
-	const SparseMatrix<BaseFloat> &similarity_matrix,
+	const Matrix<BaseFloat> &first_features,
+	const Matrix<BaseFloat> &second_features,
 	const std::pair<size_t, size_t> &start_point,
 	const std::pair<size_t, size_t> &end_point, Path *path) const {
 	KALDI_ASSERT(path != NULL);
@@ -445,7 +446,8 @@ void FastPatternSearcher::SDTWWarp(
 	const int32 DOWN = 1;
 	const int32 RIGHT = 2;
 	const int32 DIAG = 3;
-	std::pair<int32, int32> input_size = similarity_matrix.GetSize();
+	std::pair<int32, int32> input_size =
+		std::make_pair(first_features.NumRows(), second_features.NumRows());
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
 	const int32 end_row = end_point.first;
@@ -454,6 +456,7 @@ void FastPatternSearcher::SDTWWarp(
 	KALDI_ASSERT(start_row <= end_row && start_col <= end_col);
 	std::map<std::pair<int32, int32>, int32> path_decisions;
 	std::map<std::pair<int32, int32>, BaseFloat> path_similarities;
+	std::map<std::pair<int32, int32>, BaseFloat> raw_sims;
 	// Need to fix w to handle variable start and end points
 	const int32 w = std::max(config_.sdtw_width,
 													 std::abs(input_size.first - start_row -
@@ -473,7 +476,15 @@ void FastPatternSearcher::SDTWWarp(
 				 offset_col <= std::min(end_col - start_col, offset_row + w); ++offset_col) {
 			const int32 row = offset_row + start_row;
 			const int32 col = offset_col + start_col;
-			const BaseFloat sim = similarity_matrix.GetSafe(std::make_pair(row, col));
+			const SubVector<BaseFloat> &first_vec = first_features.Row(row);
+			const SubVector<BaseFloat> &second_vec = second_features.Row(col);
+			BaseFloat sim = 0.0;
+			for (int32 i = 0; i < first_vec.Dim(); ++i) {
+				for (int32 j = 0; j < second_vec.Dim(); ++j) {
+					sim += first_vec(i) * second_vec(j);
+				}
+			}
+			raw_sims[std::make_pair(row, col)] = sim;
 			const BaseFloat sim_up = path_similarities[std::make_pair(row - 1, col)];
 			const BaseFloat sim_left = path_similarities[std::make_pair(row, col - 1)];
 			const BaseFloat sim_diag = path_similarities[std::make_pair(row - 1, col - 1)];
@@ -524,7 +535,7 @@ void FastPatternSearcher::SDTWWarp(
 		}
 		const std::pair<size_t, size_t> idx = 
 			std::make_pair(backtrace_row, backtrace_col);
-		path->similarities.push_back(similarity_matrix.GetSafe(idx));
+		path->similarities.push_back(raw_sims.GetSafe(idx));
 		path->path_points.push_back(idx);
 	}
 	// Reverse the Path vectors since they were just written backwards
@@ -592,7 +603,8 @@ void FastPatternSearcher::MergeAndTrimPaths(
 }
 
 void FastPatternSearcher::WarpLinesToPaths(
-				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const Matrix<BaseFloat> &first_features,
+				const Matrix<BaseFloat> &second_features,
 				const std::vector<Line> &line_locations,
 				std::vector<Path> *sdtw_paths) const {
 	KALDI_ASSERT(sdtw_paths != NULL);
@@ -608,7 +620,8 @@ void FastPatternSearcher::WarpLinesToPaths(
 			std::make_pair(midpoint_row, midpoint_col);
 		const size_t start_row = midpoint_row - std::min(midpoint_row, midpoint_col);
 		const size_t start_col = midpoint_col - std::min(midpoint_row, midpoint_col);
-		const std::pair<size_t, size_t> matrix_size = similarity_matrix.GetSize();
+		const std::pair<size_t, size_t> matrix_size =
+			std::make_pair(first_features.NumRows(), second_features.NumRows());
 		const std::pair<size_t, size_t> origin = std::make_pair(start_row, start_col);
 		const size_t row_max = matrix_size.first - 1;
 		const size_t col_max = matrix_size.second - 1;
@@ -619,8 +632,8 @@ void FastPatternSearcher::WarpLinesToPaths(
 		const std::pair<size_t, size_t> endpoint = std::make_pair(end_row, end_col);
 		Path path_to_midpoint;
 		Path path_from_midpoint;
-		SDTWWarp(similarity_matrix, origin, midpoint, &path_to_midpoint);
-		SDTWWarp(similarity_matrix, midpoint, endpoint, &path_from_midpoint);
+		SDTWWarp(first_features, second_features, origin, midpoint, &path_to_midpoint);
+		SDTWWarp(first_features, second_features, midpoint, endpoint, &path_from_midpoint);
 		if (path_to_midpoint.path_points.size() > 0 &&
 				path_from_midpoint.path_points.size() > 0) {
 			if(!(path_to_midpoint.path_points.back().first ==
