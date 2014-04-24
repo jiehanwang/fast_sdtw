@@ -135,7 +135,10 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	prod.AddMatMat(1.0, first_features, kNoTrans, second_features, kTrans, 0.0);
 	for (int32 row = 0; row < num_rows; ++row) {
 		for (int32 col = 0; col < num_cols; ++col) {
-				similarity_matrix->SetSafe(std::make_pair(row, col), 0.5*(1 + prod(row,col)));
+				BaseFloat sim = 0.5 * (1 + prod(row, col));
+				if (sim >= config_.similarity_threshold) {
+					similarity_matrix->SetSafe(std::make_pair(row, col), 0.5*(1 + prod(row,col)));
+				}
 		}
 	}
 }
