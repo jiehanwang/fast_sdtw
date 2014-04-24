@@ -23,9 +23,9 @@ struct FastPatternSearcherConfig {
 	BaseFloat sdtw_trim;
 	int32 min_length;
 
-	FastPatternSearcherConfig(): similarity_threshold(.05), quantize_threshold(0.5),
-		smoother_length(7), smoother_median(0.5), sdtw_width(10),
-		sdtw_budget(7.0), sdtw_trim(0.1), min_length(30) {}
+	FastPatternSearcherConfig(): similarity_threshold(.05), quantize_threshold(0.75),
+		smoother_length(20), smoother_median(0.45), sdtw_width(10),
+		sdtw_budget(15.0), sdtw_trim(0.65), min_length(30) {}
 
 	void Register(OptionsItf *po) {
 		po->Register("similarity-threshold", &similarity_threshold,
