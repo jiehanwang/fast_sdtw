@@ -107,14 +107,14 @@ bool FastPatternSearcher::Search(
 				first_utt << " and " << second_utt;
 			WritePaths(sdtw_paths, pattern_writer);
 			// For debugging
-			/*
+			
 			std::stringstream sstm;
 			sstm << "<" << first_utt << "-" << second_utt << ">";
 			const std::string key = sstm.str();
 			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
 			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
 			WriteOverlaidMatrix(thresholded_raw_similarity_matrix, sdtw_paths, key, &matrix_writer);
-			*/
+			
 		}
 	}
 	return true;
@@ -509,7 +509,7 @@ void FastPatternSearcher::SDTWWarp(
 	int32 backtrace_row = end_row;
 	int32 backtrace_col = end_col;
 	path->similarities.push_back(
-		similarity_matrix.GetSafe(std::make_pair(backtrace_row, backtrace_col)));
+		raw_sims[std::make_pair(backtrace_row, backtrace_col)];
 	path->path_points.push_back(std::make_pair(backtrace_row, backtrace_col));;
 	while (backtrace_row >= start_row && backtrace_col >= start_col) {
 		if (backtrace_row == start_row && backtrace_col == start_col) {
@@ -535,7 +535,7 @@ void FastPatternSearcher::SDTWWarp(
 		}
 		const std::pair<size_t, size_t> idx = 
 			std::make_pair(backtrace_row, backtrace_col);
-		path->similarities.push_back(raw_sims.GetSafe(idx));
+		path->similarities.push_back(raw_sims[idx]);
 		path->path_points.push_back(idx);
 	}
 	// Reverse the Path vectors since they were just written backwards
@@ -618,18 +618,26 @@ void FastPatternSearcher::WarpLinesToPaths(
 									 this_line.end.second) / 2;
 		const std::pair<size_t, size_t> midpoint =
 			std::make_pair(midpoint_row, midpoint_col);
-		const size_t start_row = midpoint_row - std::min(midpoint_row, midpoint_col);
-		const size_t start_col = midpoint_col - std::min(midpoint_row, midpoint_col);
+		// Rather than warping from the midpoint all the way to the matrix boundaries,
+		// we only warp out to three times the filter length on either side.
+		const size_t target_length = 3 * config_.smoother_length;
+		const size_t start_row = midpoint_row - 
+			std::min(target_length, std::min(midpoint_row, midpoint_col));
+		const size_t start_col = midpoint_col - 
+			std::min(target_length, std::min(midpoint_row, midpoint_col));
 		const std::pair<size_t, size_t> matrix_size =
 			std::make_pair(first_features.NumRows(), second_features.NumRows());
 		const std::pair<size_t, size_t> origin = std::make_pair(start_row, start_col);
 		const size_t row_max = matrix_size.first - 1;
 		const size_t col_max = matrix_size.second - 1;
-		const size_t end_row = midpoint_row + std::min(row_max - midpoint_row,
-																									 col_max - midpoint_col);
-		const size_t end_col = midpoint_col + std::min(row_max - midpoint_row,
-																									 col_max - midpoint_col);
+		const size_t end_row = midpoint_row +
+			std::min(target_length, std::min(row_max - midpoint_row,
+																			 col_max - midpoint_col));
+		const size_t end_col = midpoint_col +
+			std::min(target_length, std::min(row_max - midpoint_row,
+																			 col_max - midpoint_col));
 		const std::pair<size_t, size_t> endpoint = std::make_pair(end_row, end_col);
+
 		Path path_to_midpoint;
 		Path path_from_midpoint;
 		SDTWWarp(first_features, second_features, origin, midpoint, &path_to_midpoint);
