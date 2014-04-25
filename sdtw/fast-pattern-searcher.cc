@@ -137,7 +137,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	int32 num_rows = first_features.NumRows();
 	int32 num_cols = second_features.NumRows();
 	outer_prod->AddMatMat(0.5, first_features, kNoTrans, second_features, kTrans, 0.0);
-	outer_prod->Add(1.0);
+	outer_prod->Add(0.5);
 	for (int32 row = 0; row < num_rows; ++row) {
 		for (int32 col = 0; col < num_cols; ++col) {
 				BaseFloat sim = (*outer_prod)(row, col);
@@ -567,7 +567,7 @@ void FastPatternSearcher::WarpBackward(
 	}
 	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
 		const int32 row = offset_row + start_row;
-		const int32 offset_col_left = std::max(-1, offset_row - config_.sdtw_width - 1);
+		const int32 offset_col_left = std::max(-1 * start_col - 1, offset_row - config_.sdtw_width - 1);
 		const int32 offset_col_right = std::min(1, offset_row + config_.sdtw_width + 1);
 		path_dists[std::make_pair(row, offset_col_left + start_col)] = BIG;
 		path_dists[std::make_pair(row, offset_col_right + start_col)] = BIG;
@@ -579,8 +579,9 @@ void FastPatternSearcher::WarpBackward(
 		BaseFloat row_min_dist = 0.0;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
+		end_row = row;
 		for (int32 offset_col = std::min(0, offset_row + config_.sdtw_width);
-				 offset_col >= std::max(0, offset_row - config_.sdtw_width);
+				 offset_col >= std::max(-1 * start_col, offset_row - config_.sdtw_width);
 				 --offset_col) {
 			const int32 col = offset_col + start_col;
 			const BaseFloat dist = 1.0 - similarity_matrix(row, col);
@@ -602,6 +603,7 @@ void FastPatternSearcher::WarpBackward(
 			}
 			if (path_dists[index] <= row_min_dist) {
 				this_row_best_col = col;
+				end_col = col;
 				row_min_dist = path_dists[index];
 			}
 		}
@@ -634,7 +636,8 @@ void FastPatternSearcher::WarpBackward(
 				backtrace_col++;
 				break;
 			default:
-				KALDI_LOG << "start=" << start_row << "," << start_col <<
+				KALDI_LOG << "backtrace=" << backtrace_row << "," << backtrace_col <<
+				" start=" << start_row << "," << start_col <<
 				" end=" << end_row << "," << end_col << " end decision=" <<
 				path_decisions[std::make_pair(end_row, end_col)];
 				KALDI_ERR << "Warning: SDTW warp backtrace failed.";
