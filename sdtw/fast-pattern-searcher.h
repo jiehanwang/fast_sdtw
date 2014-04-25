@@ -80,6 +80,7 @@ public:
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
+				Matrix<BaseFloat> *outer_prod,
 				SparseMatrix<BaseFloat> *similarity_matrix) const;
 
 	// Applies a fixed quantization threshold to the values of the input
@@ -130,12 +131,19 @@ public:
 								const std::pair<size_t, size_t> &start_point,
 				  			const std::pair<size_t, size_t> &end_point, Path *path) const;
 
+	void WarpForward(const Matrix<BaseFloat> &similarity_matrix,
+									 const std::pair<size_t, size_t> &start_point,
+									 Path *path) const;
+
+	void WarpBackward(const Matrix<BaseFloat> &similarity_matrix,
+										const std::pair<size_t, size_t> &start_point,
+										Path *path) const;
+
 	void MergeAndTrimPaths(const Path &first_half, const Path &second_half,
-						   Path *result) const;
+						   					 Path *result) const;
 
 	void WarpLinesToPaths(
-				const Matrix<BaseFloat> &first_features,
-				const Matrix<BaseFloat> &second_features,
+				const Matrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				std::vector<Path> *sdtw_paths) const;
 
