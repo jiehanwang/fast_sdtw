@@ -469,7 +469,7 @@ void FastPatternSearcher::WarpForward(
 	int32 end_row = -1;
 	int32 end_col = -1;
 	for (int32 offset_row = 0; offset_row < row_max; ++offset_row) {
-		BaseFloat row_min_dist = 0.0;
+		BaseFloat row_min_dist = BIG;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
 		for (int32 offset_col = std::max(0, offset_row - config_.sdtw_width);
@@ -576,7 +576,7 @@ void FastPatternSearcher::WarpBackward(
 	int32 end_row = -1;
 	int32 end_col = -1;
 	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
-		BaseFloat row_min_dist = 0.0;
+		BaseFloat row_min_dist = BIG;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
 		end_row = row;
