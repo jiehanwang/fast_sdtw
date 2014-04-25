@@ -67,7 +67,7 @@ bool FastPatternSearcher::Search(
 			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
 			Matrix<BaseFloat> cosine_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
-																				 &cosine_matrix;
+																				 &cosine_matrix,
 																				 &thresholded_raw_similarity_matrix);
 			//KALDI_LOG << "Quantizing matrix...";
 			SparseMatrix<int32> quantized_similarity_matrix;
@@ -449,8 +449,8 @@ void FastPatternSearcher::WarpForward(
 	const int32 DIAG = 3;
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
-	const int32 row_max = first_features.NumRows() - start_row;
-	const int32 col_max = first_features.NumRows() - start_col;
+	const int32 row_max = similarity_matrix.NumRows() - start_row;
+	const int32 col_max = similarity_matrix.NumCols() - start_col;
 	std::map<std::pair<int32, int32>, int32> path_decisions;
 	std::map<std::pair<int32, int32>, BaseFloat> path_dists;
 	// Initialize path_dists at the perimeter points with BIG
@@ -462,8 +462,8 @@ void FastPatternSearcher::WarpForward(
 		const int32 row = offset_row + start_row;
 		const int32 offset_col_left = std::max(-1, offset_row - config_.sdtw_width - 1);
 		const int32 offset_col_right = std::min(col_max, offset_row + config_.sdtw_width + 1);
-		path_dists[std::make_pair(row, offset_col_left + col_start)] = BIG;
-		path_dists[std::make_pair(row, offset_col_right + col_start)] = BIG;
+		path_dists[std::make_pair(row, offset_col_left + start_col)] = BIG;
+		path_dists[std::make_pair(row, offset_col_right + start_col)] = BIG;
 	}
 	// Warp forward until our budget is met
 	int32 end_row, end_col;
@@ -476,7 +476,7 @@ void FastPatternSearcher::WarpForward(
 				 ++offset_col) {
 			const int32 col = offset_col + start_col;
 			const BaseFloat dist = 1.0 - similarity_matrix(row, col);
-			const std::pair<int32, int32> index = std::make_pair(row, col)
+			const std::pair<int32, int32> index = std::make_pair(row, col);
 			const BaseFloat dist_up = path_dists[std::make_pair(row - 1, col)];
 			const BaseFloat dist_left = path_dists[std::make_pair(row, col - 1)];
 			const BaseFloat dist_diag = path_dists[std::make_pair(row - 1, col - 1)];
@@ -556,8 +556,6 @@ void FastPatternSearcher::WarpBackward(
 	const int32 DIAG = 3;
 	const int32 start_row = start_point.first;
 	const int32 start_col = start_point.second;
-	const int32 row_min = 0;
-	const int32 col_min = 0;
 	std::map<std::pair<int32, int32>, int32> path_decisions;
 	std::map<std::pair<int32, int32>, BaseFloat> path_dists;
 	std::map<std::pair<int32, int32>, BaseFloat> raw_sims;
@@ -566,16 +564,16 @@ void FastPatternSearcher::WarpBackward(
 		const int32 col = offset_col + start_col;
 		path_dists[std::make_pair(start_row + 1, col)] = BIG;
 	}
-	for (int32 offset_row = 0; offset_row >= row_min - start_row; --offset_row) {
+	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
 		const int32 row = offset_row + start_row;
 		const int32 offset_col_left = std::max(-1, offset_row - config_.sdtw_width - 1);
 		const int32 offset_col_right = std::min(1, offset_row + config_.sdtw_width + 1);
-		path_dists[std::make_pair(row, offset_col_left + col_start)] = BIG;
-		path_dists[std::make_pair(row, offset_col_right + col_start)] = BIG;
+		path_dists[std::make_pair(row, offset_col_left + start_col)] = BIG;
+		path_dists[std::make_pair(row, offset_col_right + start_col)] = BIG;
 	}
 	// Warp backward until our budget is met
 	int32 end_row, end_col;
-	for (int32 offset_row = 0; offset_row >= row_min - start_row; --offset_row) {
+	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
 		BaseFloat row_min_dist = 0.0;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
@@ -584,7 +582,7 @@ void FastPatternSearcher::WarpBackward(
 				 --offset_col) {
 			const int32 col = offset_col + start_col;
 			const BaseFloat dist = 1.0 - similarity_matrix(row, col);
-			const std::pair<int32, int32> index = std::make_pair(row, col)
+			const std::pair<int32, int32> index = std::make_pair(row, col);
 			const BaseFloat dist_down = path_dists[std::make_pair(row + 1, col)];
 			const BaseFloat dist_right = path_dists[std::make_pair(row, col + 1)];
 			const BaseFloat dist_diag = path_dists[std::make_pair(row + 1, col + 1)];
@@ -592,10 +590,10 @@ void FastPatternSearcher::WarpBackward(
 				path_dists[index] = dist + dist_diag;
 				path_decisions[index] = DIAG;
 			} else if (dist_down <= dist_diag && dist_down <= dist_right) {
-				path_dists[index] = dist + dist_up;
+				path_dists[index] = dist + dist_down;
 				path_decisions[index] = UP;
 			} else if (dist_right <= dist_down && dist_right <= dist_diag) {
-				path_dists[index] = dist + dist_left;
+				path_dists[index] = dist + dist_right;
 				path_decisions[index] = LEFT;
 			} else {
 				KALDI_ERR << "No min similarity in DTW computation - this should not happen.";
