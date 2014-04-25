@@ -466,7 +466,8 @@ void FastPatternSearcher::WarpForward(
 		path_dists[std::make_pair(row, offset_col_right + start_col)] = BIG;
 	}
 	// Warp forward until our budget is met
-	int32 end_row, end_col;
+	int32 end_row = -1;
+	int32 end_col = -1;
 	for (int32 offset_row = 0; offset_row < row_max; ++offset_row) {
 		BaseFloat row_min_dist = 0.0;
 		int32 this_row_best_col = -1;
@@ -572,7 +573,8 @@ void FastPatternSearcher::WarpBackward(
 		path_dists[std::make_pair(row, offset_col_right + start_col)] = BIG;
 	}
 	// Warp backward until our budget is met
-	int32 end_row, end_col;
+	int32 end_row = -1;
+	int32 end_col = -1;
 	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
 		BaseFloat row_min_dist = 0.0;
 		int32 this_row_best_col = -1;
