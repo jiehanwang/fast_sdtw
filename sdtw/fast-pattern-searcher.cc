@@ -467,9 +467,10 @@ void FastPatternSearcher::WarpForward(
 	}
 	path_dists[std::make_pair(start_row - 1, start_col - 1)] = 0;
 	// Warp forward until our budget is met
-	int32 end_row = -1;
-	int32 end_col = -1;
-	for (int32 offset_row = 0; offset_row < row_max; ++offset_row) {
+	int32 end_row = -100;
+	int32 end_col = -100;
+	for (int32 offset_row = 0; offset_row < std::min(row_max,
+		col_max + config_.sdtw_width); ++offset_row) {
 		BaseFloat row_min_dist = BIG;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
@@ -499,9 +500,9 @@ void FastPatternSearcher::WarpForward(
 				row_min_dist = path_dists[index];
 			}
 		}
+		end_row = row;
+		end_col = this_row_best_col;
 		if (row_min_dist >= config_.sdtw_budget) {
-			end_row = row;
-			end_col = this_row_best_col;
 			break;
 		}
 	}
@@ -575,9 +576,10 @@ void FastPatternSearcher::WarpBackward(
 	}
 	path_dists[std::make_pair(start_row + 1, start_col + 1)] = 0;
 	// Warp backward until our budget is met
-	int32 end_row = -1;
-	int32 end_col = -1;
-	for (int32 offset_row = 0; offset_row >= -1 * start_row; --offset_row) {
+	int32 end_row = -100;
+	int32 end_col = -100;
+	for (int32 offset_row = 0; offset_row >= std::max(-1 * start_row,
+			 -1 * (start_col + config_.sdtw_width)); --offset_row) {
 		BaseFloat row_min_dist = BIG;
 		int32 this_row_best_col = -1;
 		const int32 row = offset_row + start_row;
@@ -609,9 +611,9 @@ void FastPatternSearcher::WarpBackward(
 				row_min_dist = path_dists[index];
 			}
 		}
+		end_row = row;
+		end_col = this_row_best_col;
 		if (row_min_dist >= config_.sdtw_budget) {
-			end_row = row;
-			end_col = this_row_best_col;
 			break;
 		}
 	}
