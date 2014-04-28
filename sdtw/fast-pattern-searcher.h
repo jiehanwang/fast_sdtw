@@ -121,7 +121,7 @@ public:
 				std::vector<Line> *line_locations) const;
 
 	void FilterBlockLines(
-				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const Matrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const;

@@ -95,7 +95,7 @@ bool FastPatternSearcher::Search(
 			std::vector<Line> filtered_line_locations;
 			const BaseFloat block_filter_threshold = 0.55;
 			//KALDI_LOG << "Filtering block lines...";
-			FilterBlockLines(thresholded_raw_similarity_matrix, line_locations,
+			FilterBlockLines(cosine_matrix, line_locations,
 											 block_filter_threshold, &filtered_line_locations);
 			std::vector<Path> sdtw_paths;
 			//KALDI_LOG << "Warping lines to paths...";
@@ -109,14 +109,14 @@ bool FastPatternSearcher::Search(
 				first_utt << " and " << second_utt;
 			WritePaths(sdtw_paths, pattern_writer);
 			// For debugging
-			
+			/*
 			std::stringstream sstm;
 			sstm << "<" << first_utt << "-" << second_utt << ">";
 			const std::string key = sstm.str();
 			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
 			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
 			WriteOverlaidMatrix(blurred_matrix, sdtw_paths, key, &matrix_writer);
-			
+		*/	
 		}
 	}
 	return true;
@@ -404,7 +404,7 @@ void FastPatternSearcher::ScanDiagsForLines(
 }
 
 void FastPatternSearcher::FilterBlockLines(
-				const SparseMatrix<BaseFloat> &similarity_matrix,
+				const Matrix<BaseFloat> &similarity_matrix,
 				const std::vector<Line> &line_locations,
 				const BaseFloat &block_filter_threshold,
 				std::vector<Line> *filtered_line_locations) const {
@@ -426,8 +426,7 @@ void FastPatternSearcher::FilterBlockLines(
 		BaseFloat blocksum = 0.0;
 		for (size_t row = row_min; row <= row_max; ++row) {
 			for (size_t col = col_min; col <= col_max; ++col) {
-				blocksum += similarity_matrix.GetSafe(
-					std::make_pair<size_t, size_t>(row, col));
+				blocksum += similarity_matrix(row, col);
 			}
 		}
 		int32 num_pixels = (row_max - row_min) * (col_max - col_min);
