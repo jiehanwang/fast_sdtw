@@ -93,7 +93,7 @@ bool FastPatternSearcher::Search(
 			//KALDI_LOG << "Scanning diagonals...";
 			ScanDiagsForLines(blurred_matrix, peak_locations, &line_locations);
 			std::vector<Line> filtered_line_locations;
-			const BaseFloat block_filter_threshold = 0.55;
+			const BaseFloat block_filter_threshold = config_.block_threshold;
 			//KALDI_LOG << "Filtering block lines...";
 			FilterBlockLines(cosine_matrix, line_locations,
 											 block_filter_threshold, &filtered_line_locations);

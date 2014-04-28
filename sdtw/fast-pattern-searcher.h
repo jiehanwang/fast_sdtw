@@ -16,6 +16,7 @@ namespace kaldi {
 struct FastPatternSearcherConfig {
 	BaseFloat similarity_threshold;
 	BaseFloat quantize_threshold;
+	BaseFloat block_threshold;
 	int32 smoother_length;
 	BaseFloat smoother_median;
 	int32 sdtw_width;
@@ -24,7 +25,7 @@ struct FastPatternSearcherConfig {
 	int32 min_length;
 
 	FastPatternSearcherConfig(): similarity_threshold(.25), quantize_threshold(0.75),
-		smoother_length(20), smoother_median(0.45), sdtw_width(10),
+		block_threshold(0.7), smoother_length(20), smoother_median(0.45), sdtw_width(10),
 		sdtw_budget(15.0), sdtw_trim(0.65), min_length(30) {}
 
 	void Register(OptionsItf *po) {
@@ -37,6 +38,9 @@ struct FastPatternSearcherConfig {
 				"filter length is twice this value plus one");
 		po->Register("smoother-median", &smoother_median,
 				"Mu parameter for the median smoothing filter");
+		po->Register("block-threshold", &block_threshold,
+				"Filter out lines whose enclosing block has an average similarity threshold"
+				" greater than this value")
 		po->Register("sdtw-width", &sdtw_width,
 				"S-DTW bandwidth parameter");
 		po->Register("sdtw-budget", &sdtw_budget,
