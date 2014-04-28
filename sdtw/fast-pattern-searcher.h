@@ -24,13 +24,11 @@ struct FastPatternSearcherConfig {
 	BaseFloat sdtw_trim;
 	int32 min_length;
 
-	FastPatternSearcherConfig(): similarity_threshold(.25), quantize_threshold(0.75),
-		block_threshold(0.7), smoother_length(20), smoother_median(0.45), sdtw_width(10),
+	FastPatternSearcherConfig(): quantize_threshold(0.75),
+		block_threshold(0.7), smoother_length(20), smoother_median(0.45), sdtw_width(7),
 		sdtw_budget(15.0), sdtw_trim(0.65), min_length(30) {}
 
 	void Register(OptionsItf *po) {
-		po->Register("similarity-threshold", &similarity_threshold,
-					 "Similarities below this threshold are set to 0");
 		po->Register("quantize-threshold", &quantize_threshold,
 				"Similarity matrix quantization threshold");
 		po->Register("smoother-length", &smoother_length,
@@ -40,7 +38,7 @@ struct FastPatternSearcherConfig {
 				"Mu parameter for the median smoothing filter");
 		po->Register("block-threshold", &block_threshold,
 				"Filter out lines whose enclosing block has an average similarity threshold"
-				" greater than this value")
+				" greater than this value");
 		po->Register("sdtw-width", &sdtw_width,
 				"S-DTW bandwidth parameter");
 		po->Register("sdtw-budget", &sdtw_budget,
@@ -84,8 +82,8 @@ public:
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
-				Matrix<BaseFloat> *outer_prod,
-				SparseMatrix<BaseFloat> *similarity_matrix) const;
+				Matrix<BaseFloat> *similarity_matrix,
+				SparseMatrix<int32> *quantized_matrix) const;
 
 	// Applies a fixed quantization threshold to the values of the input
 	// matrix, writing the quantized (1 or 0 valued) matrix to the provided

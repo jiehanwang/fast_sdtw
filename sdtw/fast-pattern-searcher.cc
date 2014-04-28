@@ -64,15 +64,15 @@ bool FastPatternSearcher::Search(
 			//TODO: Perhaps make peak_delta, kernel_radius, block_filter_threshold
 			//      arguments/options
 			//KALDI_LOG << "Computing similarity matrix...";
-			SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
+			//SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
+			SparseMatrix<int32> quantized_similarity_matrix;
 			Matrix<BaseFloat> cosine_matrix;
 			ComputeThresholdedSimilarityMatrix(first_features, second_features,
-																				 &cosine_matrix,
-																				 &thresholded_raw_similarity_matrix);
+																				 &cosine_matrix, &quantized_similarity_matrix);
 			//KALDI_LOG << "Quantizing matrix...";
-			SparseMatrix<int32> quantized_similarity_matrix;
-			QuantizeMatrix(thresholded_raw_similarity_matrix,
-										 &quantized_similarity_matrix);
+			
+			//QuantizeMatrix(thresholded_raw_similarity_matrix,
+			//							 &quantized_similarity_matrix);
 			SparseMatrix<int32> median_smoothed_matrix;
 			//KALDI_LOG << "Median smoothing matrix...";
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
@@ -125,24 +125,24 @@ bool FastPatternSearcher::Search(
 void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
-				Matrix<BaseFloat> *outer_prod,
-				SparseMatrix<BaseFloat> *similarity_matrix) const {
+				Matrix<BaseFloat> *similarity_matrix,
+				SparseMatrix<int32> *quantized_matrix) const {
 	KALDI_ASSERT(similarity_matrix != NULL);
-	KALDI_ASSERT(outer_prod != NULL);
-	similarity_matrix->Clear();
+	KALDI_ASSERT(similarity_matrix != NULL);
+	quantized_matrix->Clear();
 	const std::pair<int32, int32> size =
 		std::make_pair<int32, int32>(first_features.NumRows(), second_features.NumRows());
-	similarity_matrix->SetSize(size);
-	outer_prod->Resize(size.first, size.second, kUndefined);
+	quantized_matrix->SetSize(size);
+	similarity_matrix->Resize(size.first, size.second, kUndefined);
 	int32 num_rows = first_features.NumRows();
 	int32 num_cols = second_features.NumRows();
-	outer_prod->AddMatMat(0.5, first_features, kNoTrans, second_features, kTrans, 0.0);
-	outer_prod->Add(0.5);
+	similarity_matrix->AddMatMat(0.5, first_features, kNoTrans, second_features, kTrans, 0.0);
+	similarity_matrix->Add(0.5);
 	for (int32 row = 0; row < num_rows; ++row) {
 		for (int32 col = 0; col < num_cols; ++col) {
-				BaseFloat sim = (*outer_prod)(row, col);
+				BaseFloat sim = (*similarity_matrix)(row, col);
 				if (sim >= config_.similarity_threshold) {
-					similarity_matrix->SetSafe(std::make_pair(row, col), sim);
+					quantized_matrix->SetSafe(std::make_pair(row, col), 1.0);
 				}
 		}
 	}
