@@ -61,30 +61,4 @@ void Path::Write(std::ostream &out_stream, bool binary) const {
   }
 }
 
-BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
-													 const SubVector<BaseFloat> &second){
-  if (first.Dim() != second.Dim()) {
-    KALDI_ERR << "Dim mismatch in CosineSimilarity computation: "
-      << first.Dim() << " vs " << second.Dim();
-	}
-  BaseFloat sum = 0.0;
-  BaseFloat mag1 = 0.0;
-  BaseFloat mag2 = 0.0;
-  for (int32 i = 0; i < first.Dim(); ++i) {
-    sum += first(i) * second(i);
-    mag1 += std::pow(first(i), 2);
-    mag2 += std::pow(second(i), 2);
-  }
-  mag1 = std::sqrt(mag1);
-  mag2 = std::sqrt(mag2);
-  return 0.5 * (1.0 + sum/(mag1 * mag2));
-/*
-  SubVector<BaseFloat> f(first);
-  SubVector<BaseFloat> s(second);
-	//f.Scale(1.0 / f.Norm(2));
-	//s.Scale(1.0 / f.Norm(2));
-	f.MulElements(s);
-	return f.Sum();*/
-}
-
 }  // end namespace kaldi

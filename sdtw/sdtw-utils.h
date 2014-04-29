@@ -16,9 +16,6 @@
 
 namespace kaldi {
 
-BaseFloat CosineSimilarity(const SubVector<BaseFloat> &first,
-												 	 const SubVector<BaseFloat> &second);
-
 struct Line {
 	std::pair<size_t, size_t> start;
 	std::pair<size_t, size_t> end;
@@ -50,7 +47,8 @@ template<class T> class SparseMatrix {
 
 		std::vector<std::pair<size_t, size_t> > GetNonzeroElements() const {
 			std::vector<std::pair<size_t, size_t> > retval;
-			for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
+			for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = 
+				mat_.begin(); it != mat_.end(); ++it) {
 				retval.push_back(it->first);
 			}
 			return retval;
@@ -63,7 +61,8 @@ template<class T> class SparseMatrix {
 
 		void Clamp(const T &epsilon) {
 			std::map<std::pair<size_t, size_t>, T> clamped_mat;
-			for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it = mat_.begin(); it != mat_.end(); ++it) {
+			for (typename std::map<std::pair<size_t, size_t>, T>::const_iterator it =
+				mat_.begin(); it != mat_.end(); ++it) {
 				if (it->second > epsilon) {
 					clamped_mat[it->first] = it->second;
 				}

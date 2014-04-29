@@ -14,19 +14,20 @@
 namespace kaldi {
 
 struct FastPatternSearcherConfig {
-	BaseFloat similarity_threshold;
 	BaseFloat quantize_threshold;
 	BaseFloat block_threshold;
 	int32 smoother_length;
+	int32 kernel_radius;
+	BaseFloat peak_delta;
 	BaseFloat smoother_median;
 	int32 sdtw_width;
 	BaseFloat sdtw_budget;
 	BaseFloat sdtw_trim;
 	int32 min_length;
 
-	FastPatternSearcherConfig(): quantize_threshold(0.75),
+	FastPatternSearcherConfig(): quantize_threshold(0.75), kernel_radius(1), peak_delta(0.25),
 		block_threshold(0.7), smoother_length(20), smoother_median(0.45), sdtw_width(7),
-		sdtw_budget(15.0), sdtw_trim(0.65), min_length(30) {}
+		sdtw_budget(10.0), sdtw_trim(0.65), min_length(30) {}
 
 	void Register(OptionsItf *po) {
 		po->Register("quantize-threshold", &quantize_threshold,
@@ -41,6 +42,10 @@ struct FastPatternSearcherConfig {
 				" greater than this value");
 		po->Register("sdtw-width", &sdtw_width,
 				"S-DTW bandwidth parameter");
+		po->Register("peak-delta", &peak_delta,
+			"delta parameter for the peakdet peak picker");
+		po->Register("kernel-radius", &kernel_radius,
+			"radius of the Gaussian blurring kernel");
 		po->Register("sdtw-budget", &sdtw_budget,
 				"S-DTW distortion budget for each direction "
 				"(forwards and backwards)");
@@ -52,8 +57,9 @@ struct FastPatternSearcherConfig {
 	}
 	void Check() const {
 		KALDI_ASSERT(quantize_threshold >= 0 && smoother_length > 0 && min_length > 0
-								 && smoother_median >= 0 && smoother_median <= 1
-								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0);
+								 && smoother_median >= 0 && smoother_median <= 1 && kernel_radius >= 0
+								 && sdtw_width > 1 && sdtw_budget > 0 && sdtw_trim >= 0
+								 && peak_delta > 0);
 	}
 };
 
@@ -79,6 +85,9 @@ public:
 
 	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> &features) const;
 
+	// Compute a cosine similarity matrix as well as a sparse matrix
+	// representing the binary quantized similarity matrix. This
+	// could possibly be refactored into two separate methods.
 	void ComputeThresholdedSimilarityMatrix(
 				const Matrix<BaseFloat> &first_features,
 				const Matrix<BaseFloat> &second_features,
@@ -90,6 +99,8 @@ public:
 	// output matrix. Does not check that the matrix pointed to by
 	// quantized_matrix is initially empty, nor does it bother to clear it. For
 	// predictable behavior, supply an empty matrix.
+	// I don't use this method anymore; the quantization is taken care of
+	// by ComputeThresholdedSimilarityMatrix
 	void QuantizeMatrix(
 				const SparseMatrix<BaseFloat> &input_matrix,
 				SparseMatrix<int32> *quantized_matrix) const;

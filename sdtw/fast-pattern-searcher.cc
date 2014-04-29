@@ -78,7 +78,7 @@ bool FastPatternSearcher::Search(
 			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
 																	&median_smoothed_matrix);
 			SparseMatrix<BaseFloat> blurred_matrix;
-			const size_t kernel_radius = 1;
+			const size_t kernel_radius = config_.kernel_radius;
 			//KALDI_LOG << "Blurring matrix...";
 			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
 																&blurred_matrix);
@@ -86,7 +86,7 @@ bool FastPatternSearcher::Search(
 			//KALDI_LOG << "Computing Hough transform...";
 			ComputeDiagonalHoughTransform(blurred_matrix, &hough_transform);
 			std::vector<int32> peak_locations;
-			const BaseFloat peak_delta = 0.25;
+			const BaseFloat peak_delta = config_.peak_delta;
 			//KALDI_LOG << "Picking peaks...";
 			PickPeaksInVector(hough_transform, peak_delta, &peak_locations);
 			std::vector<Line> line_locations;
@@ -116,7 +116,7 @@ bool FastPatternSearcher::Search(
 			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
 			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
 			WriteOverlaidMatrix(blurred_matrix, sdtw_paths, key, &matrix_writer);
-		*/	
+			*/
 		}
 	}
 	return true;
@@ -141,7 +141,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 	for (int32 row = 0; row < num_rows; ++row) {
 		for (int32 col = 0; col < num_cols; ++col) {
 				BaseFloat sim = (*similarity_matrix)(row, col);
-				if (sim >= config_.similarity_threshold) {
+				if (sim >= config_.quantize_threshold) {
 					quantized_matrix->SetSafe(std::make_pair(row, col), 1.0);
 				}
 		}
@@ -177,7 +177,7 @@ Matrix<BaseFloat> FastPatternSearcher::L2NormalizeFeatures(
 		}
 		row_mags(row) = 1.0 / (epsilon + std::sqrt(mag));
 	}
-	// Scale each row by its magnitude
+	// Scale each row by its inverse magnitude
 	normalized_features.MulRowsVec(row_mags);
 	return normalized_features;
 }
@@ -209,8 +209,7 @@ void FastPatternSearcher::ApplyMedianSmootherToMatrix(
 	}
 	const std::vector< std::pair<size_t, size_t> > nonzero_counts = 
 		median_counts.GetNonzeroElements();
-	// Precomputes the count threshold for median smoothing. These casts
-	// *should* work, but definitely needs to be tested.
+	// Precomputes the count threshold for median smoothing.
 	const int32 threshold = static_cast<int32>(
 		2 * config_.smoother_median * (config_.smoother_length + 1));
 	for (int i = 0; i < nonzero_counts.size(); ++i) {
@@ -651,117 +650,6 @@ void FastPatternSearcher::WarpBackward(
 		path->similarities.push_back(similarity_matrix(backtrace_row, backtrace_col));
 		path->path_points.push_back(idx);
 	}
-}
-
-void FastPatternSearcher::SDTWWarp(
-	const Matrix<BaseFloat> &first_features,
-	const Matrix<BaseFloat> &second_features,
-	const std::pair<size_t, size_t> &start_point,
-	const std::pair<size_t, size_t> &end_point, Path *path) const {
-	KALDI_ASSERT(path != NULL);
-	const BaseFloat BIG_NEG = -1e20;
-	// Ok, so I would like to use an enum here to represent the DTW move types,
-	// But templating on locally defined enums is bad news. So, I am just going
-	// to use int32s. Todo: Figure out a better way to do this.
-	const int32 DOWN = 1;
-	const int32 RIGHT = 2;
-	const int32 DIAG = 3;
-	std::pair<int32, int32> input_size =
-		std::make_pair(first_features.NumRows(), second_features.NumRows());
-	const int32 start_row = start_point.first;
-	const int32 start_col = start_point.second;
-	const int32 end_row = end_point.first;
-	const int32 end_col = end_point.second;
-	KALDI_ASSERT(end_row < input_size.first && end_col < input_size.second);
-	KALDI_ASSERT(start_row <= end_row && start_col <= end_col);
-	std::map<std::pair<int32, int32>, int32> path_decisions;
-	std::map<std::pair<int32, int32>, BaseFloat> path_similarities;
-	std::map<std::pair<int32, int32>, BaseFloat> raw_sims;
-	// Need to fix w to handle variable start and end points
-	const int32 w = std::max(config_.sdtw_width,
-													 std::abs(input_size.first - start_row -
-													 					input_size.second - start_col));
-	// Initialize path_similarities map with BIG_NEG
-	for (int32 offset_row = -1; offset_row <= end_row - start_row; ++offset_row) {
-		for (int32 offset_col = offset_row - w - 1; offset_col <= offset_row + w + 1; ++offset_col) {
-			const int32 row = offset_row + start_row;
-			const int32 col = offset_col + start_col;
-			path_similarities[std::make_pair(row, col)] = BIG_NEG;
-		}
-	}
-	// Fill in the DTW distance table
-	path_similarities[std::make_pair(start_row - 1, start_col - 1)] = 0; 
-	for (int32 offset_row = 0; offset_row <= end_row - start_row; ++offset_row) {
-		for (int32 offset_col = std::max(0, offset_row - w);
-				 offset_col <= std::min(end_col - start_col, offset_row + w); ++offset_col) {
-			const int32 row = offset_row + start_row;
-			const int32 col = offset_col + start_col;
-			const SubVector<BaseFloat> &first_vec = first_features.Row(row);
-			const SubVector<BaseFloat> &second_vec = second_features.Row(col);
-			BaseFloat sim = 0.0;
-			for (int32 i = 0; i < first_vec.Dim(); ++i) {
-				for (int32 j = 0; j < second_vec.Dim(); ++j) {
-					sim += first_vec(i) * second_vec(j);
-				}
-			}
-			sim = 0.5 * (1.0 + sim);
-			raw_sims[std::make_pair(row, col)] = sim;
-			const BaseFloat sim_up = path_similarities[std::make_pair(row - 1, col)];
-			const BaseFloat sim_left = path_similarities[std::make_pair(row, col - 1)];
-			const BaseFloat sim_diag = path_similarities[std::make_pair(row - 1, col - 1)];
-			const std::pair<int32, int32> index = std::make_pair(row, col);
-			if (sim_diag >= sim_up && sim_diag >= sim_left) {
-				path_similarities[index] = sim + sim_diag;
-				path_decisions[index] = DIAG;
-			} else if (sim_up >= sim_diag && sim_up >= sim_left) {
-				path_similarities[index] = sim + sim_up;
-				path_decisions[index] = DOWN;
-			} else if (sim_left >= sim_up && sim_left >= sim_diag) {
-				path_similarities[index] = sim + sim_left;
-				path_decisions[index] = RIGHT;
-			} else {
-				KALDI_ERR << "No min similarity in DTW computation - this should not happen.";
-			}
-		}
-	}
-	// Now backtrace from the end point to the start point
-	path->similarities.clear();
-	path->path_points.clear();
-	int32 backtrace_row = end_row;
-	int32 backtrace_col = end_col;
-	path->similarities.push_back(
-		raw_sims[std::make_pair(backtrace_row, backtrace_col)]);
-	path->path_points.push_back(std::make_pair(backtrace_row, backtrace_col));
-	while (backtrace_row >= start_row && backtrace_col >= start_col) {
-		if (backtrace_row == start_row && backtrace_col == start_col) {
-			break;
-		}
-		switch(path_decisions[std::make_pair(backtrace_row, backtrace_col)]) {
-			case DOWN:
-				backtrace_row--;
-				break;
-			case RIGHT:
-				backtrace_col--;
-				break;
-			case DIAG:
-				backtrace_row--;
-				backtrace_col--;
-				break;
-			default:
-				KALDI_LOG << "start=" << start_row << "," << start_col <<
-				" end=" << end_row << "," << end_col << " end decision=" <<
-				path_decisions[std::make_pair(end_row, end_col)];
-				KALDI_ERR << "Warning: SDTW warp backtrace failed.";
-				break;
-		}
-		const std::pair<size_t, size_t> idx = 
-			std::make_pair(backtrace_row, backtrace_col);
-		path->similarities.push_back(raw_sims[idx]);
-		path->path_points.push_back(idx);
-	}
-	// Reverse the Path vectors since they were just written backwards
-	std::reverse(path->similarities.begin(), path->similarities.end());
-	std::reverse(path->path_points.begin(), path->path_points.end());
 }
 
 void FastPatternSearcher::MergeAndTrimPaths(
