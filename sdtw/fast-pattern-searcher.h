@@ -15,19 +15,19 @@ namespace kaldi {
 
 struct FastPatternSearcherConfig {
 	BaseFloat quantize_threshold;
-	BaseFloat block_threshold;
 	int32 smoother_length;
-	int32 kernel_radius;
-	BaseFloat peak_delta;
 	BaseFloat smoother_median;
+	BaseFloat peak_delta;
+	BaseFloat block_threshold;
+	int32 kernel_radius;
 	int32 sdtw_width;
 	BaseFloat sdtw_budget;
 	BaseFloat sdtw_trim;
 	int32 min_length;
 
-	FastPatternSearcherConfig(): quantize_threshold(0.75), kernel_radius(1), peak_delta(0.25),
-		block_threshold(0.7), smoother_length(20), smoother_median(0.45), sdtw_width(7),
-		sdtw_budget(10.0), sdtw_trim(0.65), min_length(30) {}
+	FastPatternSearcherConfig(): quantize_threshold(0.75), smoother_length(20), 
+		smoother_median(0.45), peak_delta(0.25), block_threshold(0.7), kernel_radius(1), 
+		sdtw_width(7), sdtw_budget(10.0), sdtw_trim(0.65), min_length(30) {}
 
 	void Register(OptionsItf *po) {
 		po->Register("quantize-threshold", &quantize_threshold,
@@ -37,15 +37,15 @@ struct FastPatternSearcherConfig {
 				"filter length is twice this value plus one");
 		po->Register("smoother-median", &smoother_median,
 				"Mu parameter for the median smoothing filter");
+		po->Register("peak-delta", &peak_delta,
+			"delta parameter for the peakdet peak picker");
 		po->Register("block-threshold", &block_threshold,
 				"Filter out lines whose enclosing block has an average similarity threshold"
 				" greater than this value");
-		po->Register("sdtw-width", &sdtw_width,
-				"S-DTW bandwidth parameter");
-		po->Register("peak-delta", &peak_delta,
-			"delta parameter for the peakdet peak picker");
 		po->Register("kernel-radius", &kernel_radius,
 			"radius of the Gaussian blurring kernel");
+		po->Register("sdtw-width", &sdtw_width,
+				"S-DTW bandwidth parameter");
 		po->Register("sdtw-budget", &sdtw_budget,
 				"S-DTW distortion budget for each direction "
 				"(forwards and backwards)");
