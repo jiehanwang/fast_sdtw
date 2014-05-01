@@ -19,15 +19,72 @@ FastPatternSearcher::FastPatternSearcher(
 	config.Check();
 }
 
+// Given a vector of utterance id + feature pairs, does a pattern search
+// between every unique pair of utterances.
 bool FastPatternSearcher::Search(
-				const std::vector<Matrix<BaseFloat> > &utt_features,
-				const std::vector<std::string> &utt_ids,
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats,
+	PathWriter *pattern_writer) const {
+	// Precompute L-2 normalized features
+	std::vector<std::pair<std::string, Matrix<BaseFloat> > > normalized_feats;
+	for (int32 i = 0; i < feats.size(); ++i) {
+		const std::string &id = feats[i].first;
+		const Matrix<BaseFloat> &f = feats[i].second;
+		normalized_feats.push_back(std::make_pair(id, L2NormalizeFeatures(f)));
+	}
+	// Search between each unique pair of utterances in feats
+	for (int i = 0; i < normalized_feats.size() - 1; ++i) {
+		for (int j = i + 1; j < normalized_feats.size(); ++j) {
+			const std::string &id_i = normalized_feats[i].first;
+			const Matrix<BaseFloat> &feats_i = normalized_feats[i].second;
+			const std::string &id_j = normalized_feats[j].first;
+			const Matrix<BaseFloat> &feats_j = normalized_feats[j].second;
+			SearchOnePair(feats_i, feats_j, id_i, id_j, pattern_writer);
+		}
+	}
+}
+
+// Given two vectors of utterance id + feature pairs, does a pattern search
+// between each pair of utterances between the two vectors (i.e. one utt from
+// the first vector vs. one utt from the second vector)
+bool FastPatternSearcher::Search(
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_a,
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_b,
+	PathWriter *pattern_writer) const {
+	// Precompute L-2 normalized features
+	std::vector<std::pair<std::string, Matrix<BaseFloat> > > normalized_feats_a;
+	for (int32 i = 0; i < feats_a.size(); ++i) {
+		const std::string &id = feats_a[i].first;
+		const Matrix<BaseFloat> &f = feats_a[i].second;
+		normalized_feats_a.push_back(std::make_pair(id, L2NormalizeFeatures(f)));
+	}
+	std::vector<std::pair<std::string, Matrix<BaseFloat> > > normalized_feats_b;
+	for (int32 i = 0; i < feats_b.size(); ++i) {
+		const std::string &id = feats_b[i].first;
+		const Matrix<BaseFloat> &f = feats_b[i].second;
+		normalized_feats_b.push_back(std::make_pair(id, L2NormalizeFeatures(f)));
+	}
+	// Search between each unique pair of <utt_a, utt_b> for utt_a in feats_a,
+	// utt_b in feats_b
+	for (int32 i = 0; i < normalized_feats_a.size(); ++i) {
+		for (int32 j = 0; j < normalized_feats_b.size(); ++j) {
+			const std::string &id_i = normalized_feats_a[i].first;
+			const Matrix<BaseFloat> &feats_i = normalized_feats_a[i].second;
+			const std::string &id_j = normalized_feats_b[j].first;
+			const Matrix<BaseFloat> &feats_j = normalized_feats_b[j].second;
+			SearchOnePair(feats_i, feats_j, id_i, id_j, pattern_writer);
+		}
+	}
+}
+
+bool FastPatternSearcher::SearchOnePair(
+				const Matrix<BaseFloat> &first_features,
+				const Matrix<BaseFloat> &second_features,
+				const std::string &first_id,
+				const std::string &second_id,
 				PathWriter *pattern_writer) const {
 
-	KALDI_ASSERT(utt_features.size() == utt_ids.size());
-
 	// Algorithm steps:
-	// For each pair of matrices in utt_features:
+	// For each pair of one matrix from features_a and one from features_b:
 	//		1. Compute similarity matrix
 	//		2. Quantize similarity matrix
 	//		3. Apply median smoothing filter
@@ -39,86 +96,47 @@ bool FastPatternSearcher::Search(
 	//				solid in the original similarity matrix
 	//		9. Go back and refine the warp path of each line segment with SDTW
 
-	// TODO: Figure out a better way to iterate over each pair of matrices,
-	//			i.e. with iterators
-	// TODO: I should probably precompute normalized features (e.g. L2
-	//       normalize each row of each feature matrix if using cosine
-	//       similarity) for the sake of efficiency.
-
-	// L2 normalize all feature vectors.
-	std::vector<Matrix<BaseFloat> > normalized_features;
-	//KALDI_LOG << "Normalizing features for " << utt_features.size() << " utterances";
-	for (int32 i = 0; i < utt_features.size(); ++i) {
-		normalized_features.push_back(L2NormalizeFeatures(utt_features[i]));
+	SparseMatrix<int32> quantized_similarity_matrix;
+	Matrix<BaseFloat> cosine_matrix;
+	ComputeThresholdedSimilarityMatrix(first_features, second_features,
+																		 &cosine_matrix, &quantized_similarity_matrix);
+	SparseMatrix<int32> median_smoothed_matrix;
+	ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
+															&median_smoothed_matrix);
+	SparseMatrix<BaseFloat> blurred_matrix;
+	const size_t kernel_radius = config_.kernel_radius;
+	ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
+														&blurred_matrix);
+	std::vector<BaseFloat> hough_transform;
+	ComputeDiagonalHoughTransform(blurred_matrix, &hough_transform);
+	std::vector<int32> peak_locations;
+	const BaseFloat peak_delta = config_.peak_delta;
+	PickPeaksInVector(hough_transform, peak_delta, &peak_locations);
+	std::vector<Line> line_locations;
+	ScanDiagsForLines(blurred_matrix, peak_locations, &line_locations);
+	std::vector<Line> filtered_line_locations;
+	const BaseFloat block_filter_threshold = config_.block_threshold;
+	FilterBlockLines(cosine_matrix, line_locations,
+									 block_filter_threshold, &filtered_line_locations);
+	std::vector<Path> sdtw_paths;
+	WarpLinesToPaths(cosine_matrix,
+									 filtered_line_locations, &sdtw_paths);
+	for (int32 i = 0; i < sdtw_paths.size(); ++i) {
+		sdtw_paths[i].first_id = first_id;
+		sdtw_paths[i].second_id = second_id;
 	}
-	KALDI_LOG << "Done normalizing";
-	for (int i = 0; i < utt_features.size() - 1; ++i) {
-		for (int j = i + 1; j < utt_features.size(); ++j) {
-			const Matrix<BaseFloat> &first_features = normalized_features[i];
-			const Matrix<BaseFloat> &second_features = normalized_features[j];
-			const std::string first_utt = utt_ids[i];
-			const std::string second_utt = utt_ids[j];
-			//TODO: Implement these methods as well as SparseMatrix, Line, Path,
-			// and PatternStringWriter
-			//TODO: Unit tests for everything!
-			//TODO: Perhaps make peak_delta, kernel_radius, block_filter_threshold
-			//      arguments/options
-			//KALDI_LOG << "Computing similarity matrix...";
-			//SparseMatrix<BaseFloat> thresholded_raw_similarity_matrix;
-			SparseMatrix<int32> quantized_similarity_matrix;
-			Matrix<BaseFloat> cosine_matrix;
-			ComputeThresholdedSimilarityMatrix(first_features, second_features,
-																				 &cosine_matrix, &quantized_similarity_matrix);
-			//KALDI_LOG << "Quantizing matrix...";
-			
-			//QuantizeMatrix(thresholded_raw_similarity_matrix,
-			//							 &quantized_similarity_matrix);
-			SparseMatrix<int32> median_smoothed_matrix;
-			//KALDI_LOG << "Median smoothing matrix...";
-			ApplyMedianSmootherToMatrix(quantized_similarity_matrix,
-																	&median_smoothed_matrix);
-			SparseMatrix<BaseFloat> blurred_matrix;
-			const size_t kernel_radius = config_.kernel_radius;
-			//KALDI_LOG << "Blurring matrix...";
-			ApplyGaussianBlurToMatrix(median_smoothed_matrix, kernel_radius,
-																&blurred_matrix);
-			std::vector<BaseFloat> hough_transform;
-			//KALDI_LOG << "Computing Hough transform...";
-			ComputeDiagonalHoughTransform(blurred_matrix, &hough_transform);
-			std::vector<int32> peak_locations;
-			const BaseFloat peak_delta = config_.peak_delta;
-			//KALDI_LOG << "Picking peaks...";
-			PickPeaksInVector(hough_transform, peak_delta, &peak_locations);
-			std::vector<Line> line_locations;
-			//KALDI_LOG << "Scanning diagonals...";
-			ScanDiagsForLines(blurred_matrix, peak_locations, &line_locations);
-			std::vector<Line> filtered_line_locations;
-			const BaseFloat block_filter_threshold = config_.block_threshold;
-			//KALDI_LOG << "Filtering block lines...";
-			FilterBlockLines(cosine_matrix, line_locations,
-											 block_filter_threshold, &filtered_line_locations);
-			std::vector<Path> sdtw_paths;
-			//KALDI_LOG << "Warping lines to paths...";
-			WarpLinesToPaths(cosine_matrix,
-											 filtered_line_locations, &sdtw_paths);
-			for (int32 i = 0; i < sdtw_paths.size(); ++i) {
-				sdtw_paths[i].first_id = first_utt;
-				sdtw_paths[i].second_id = second_utt;
-			}
-			KALDI_LOG << "Found " << sdtw_paths.size() << " patterns between " << 
-				first_utt << " and " << second_utt;
-			WritePaths(sdtw_paths, pattern_writer);
-			// For debugging
-			/*
-			std::stringstream sstm;
-			sstm << "<" << first_utt << "-" << second_utt << ">";
-			const std::string key = sstm.str();
-			std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
-			SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
-			WriteOverlaidMatrix(blurred_matrix, sdtw_paths, key, &matrix_writer);
-			*/
-		}
-	}
+	KALDI_LOG << "Found " << sdtw_paths.size() << " patterns between " << 
+		first_utt << " and " << second_utt;
+	WritePaths(sdtw_paths, pattern_writer);
+	// For debugging
+	/*
+	std::stringstream sstm;
+	sstm << "<" << first_id << "-" << second_id << ">";
+	const std::string key = sstm.str();
+	std::string matrix_wspecifier = "ark,t:sdtw_matrix.out";
+	SparseFloatMatrixWriter matrix_writer(matrix_wspecifier);
+	WriteOverlaidMatrix(blurred_matrix, sdtw_paths, key, &matrix_writer);
+	*/
 	return true;
 }
 

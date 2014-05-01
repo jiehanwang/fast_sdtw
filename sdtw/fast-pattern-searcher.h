@@ -78,10 +78,21 @@ public:
 	~FastPatternSearcher() {
 	}
 
-	// TODO: Check that I am passing in the pattern_writer properly (pointer)
-	bool Search(const std::vector<Matrix<BaseFloat> > &utt_features,
-							const std::vector<std::string> &utt_ids,
-							PathWriter *pattern_writer) const;
+	bool Search(
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats,
+	PathWriter *pattern_writer) const;
+
+	bool Search(
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_a,
+	const std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_b,
+	PathWriter *pattern_writer) const;
+
+	bool SearchOnePair(
+				const Matrix<BaseFloat> &first_features,
+				const Matrix<BaseFloat> &second_features,
+				const std::string &first_id,
+				const std::string &second_id,
+				PathWriter *pattern_writer) const;
 
 	Matrix<BaseFloat> L2NormalizeFeatures(const Matrix<BaseFloat> &features) const;
 

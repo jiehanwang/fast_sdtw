@@ -19,42 +19,64 @@ int main(int argc, char *argv[]) {
 
 		const char *usage =
 				"Perform fast pattern discovery.\n"
-				"Usage: fast-sdtw [options] features-rspecifier patterns-wspecifier";
+				"Usage: fast-sdtw [options] features-a-rspecifier [features-b-rspecifier] patterns-wspecifier\n"
+				"If only features-a-rspecifier is given, search between each utterance pair in features-a-rspecifier."
+				"If both features-a-rspecifier and features-b-rspecifier are given, search between each pair (a, b)";
 		ParseOptions po(usage);
 		Timer timer;
 		FastPatternSearcherConfig config;
 		config.Register(&po);
 		po.Read(argc, argv);
-		if (po.NumArgs() != 2) {
+		if (po.NumArgs() < 2 || po.NumArgs() > 3) {
 			po.PrintUsage();
 			exit(1);
 		}
-		std::string features_rspecifier = po.GetArg(1),
-								patterns_wspecifier = po.GetArg(2);
-		int32 num_err = 0;
-		std::vector<std::string> utt_ids;
-		std::vector< Matrix<BaseFloat> > utt_features;
-		SequentialBaseFloatMatrixReader feature_reader(features_rspecifier);
+		FastPatternSearcher searcher(config);
+		std::string features_a_rspecifier, features_b_rspecifier, patterns_wspecifier;
+		// Decide if there is one or two input feature sets to read
+		if (po.NumArgs() == 2) {
+			features_a_rspecifier = po.GetArg(1);
+			patterns_wspecifier = po.GetArg(2);
+		} else {
+			features_a_rspecifier = po.GetArg(1);
+			features_b_rspecifier = po.GetArg(2);
+			patterns_wspecifier = po.GetArg(3);
+		}
 		PathWriter pattern_writer(patterns_wspecifier);
-		for (; !feature_reader.Done(); feature_reader.Next()) {
-			std::string utt = feature_reader.Key();
-			Matrix<BaseFloat> features(feature_reader.Value());
-			feature_reader.FreeCurrent(); // Do I need this? What does this do?
+		// Read the first features
+		std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_a;
+		SequentialBaseFloatMatrixReader feats_a_reader(features_a_rspecifier);
+		for (; !feats_a_reader.Done(); feats_a_reader.Next()) {
+			std::string utt = feats_a_reader.Key();
+			Matrix<BaseFloat> features(feats_a_reader.Value());
+			feats_a_reader.FreeCurrent();
 			if (features.NumRows() == 0) {
 				KALDI_WARN << "Zero-length utterance: " << utt;
-				num_err++;
 				continue;
 			}
-			utt_ids.push_back(utt);
-			utt_features.push_back(features);
+			feats_a.push_back(std::make_pair(utt, features));
 		}
-
-		FastPatternSearcher searcher(config);
-		searcher.Search(utt_features, utt_ids, &pattern_writer);
-
+		// If there is a second set of features, read those then search. Otherwise, just search
+		// using the first set.
+		if (po.NumArgs() == 3) {
+			std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_b;
+			SequentialBaseFloatMatrixReader feats_b_reader(features_b_rspecifier);
+			for (; !feats_b_reader.Done(); feats_b_reader.Next()) {
+				std::string utt = feats_b_reader.Key();
+				Matrix<BaseFloat> features(feats_b_reader.Value());
+				feats_b_reader.FreeCurrent();
+				if (features.NumRows() == 0) {
+					KALDI_WARN << "Zero-length utterance: " << utt;
+					continue;
+				}
+				feats_b.push_back(std::make_pair(utt, features));
+			}
+			searcher.Search(feats_a, feats_b, &pattern_writer);
+		} else {
+			searcher.Search(feats_a, &pattern_writer);
+		}
 		double elapsed = timer.Elapsed();
 		KALDI_LOG << "Time taken: " << elapsed << " seconds.";
-
 	} catch(const std::exception &e) {
 		std::cerr << e.what();
 		return -1;
