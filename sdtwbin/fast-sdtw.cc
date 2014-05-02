@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 		const char *usage =
 				"Perform fast pattern discovery.\n"
 				"Usage: fast-sdtw [options] features-a-rspecifier [features-b-rspecifier] patterns-wspecifier\n"
-				"If only features-a-rspecifier is given, search between each utterance pair in features-a-rspecifier."
+				"If only features-a-rspecifier is given, search between each utterance pair in features-a-rspecifier.\n"
 				"If both features-a-rspecifier and features-b-rspecifier are given, search between each pair (a, b)";
 		ParseOptions po(usage);
 		Timer timer;

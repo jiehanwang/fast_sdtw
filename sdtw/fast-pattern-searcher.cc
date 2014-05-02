@@ -41,6 +41,7 @@ bool FastPatternSearcher::Search(
 			SearchOnePair(feats_i, feats_j, id_i, id_j, pattern_writer);
 		}
 	}
+	return true;
 }
 
 // Given two vectors of utterance id + feature pairs, does a pattern search
@@ -74,6 +75,7 @@ bool FastPatternSearcher::Search(
 			SearchOnePair(feats_i, feats_j, id_i, id_j, pattern_writer);
 		}
 	}
+	return true;
 }
 
 bool FastPatternSearcher::SearchOnePair(
@@ -126,7 +128,7 @@ bool FastPatternSearcher::SearchOnePair(
 		sdtw_paths[i].second_id = second_id;
 	}
 	KALDI_LOG << "Found " << sdtw_paths.size() << " patterns between " << 
-		first_utt << " and " << second_utt;
+		first_id << " and " << second_id;
 	WritePaths(sdtw_paths, pattern_writer);
 	// For debugging
 	/*
