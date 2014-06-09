@@ -15,8 +15,6 @@
 int main(int argc, char *argv[]) {
 	try {
 		using namespace kaldi;
-		typedef kaldi::int32 int32;
-
 		const char *usage =
 				"Perform fast pattern discovery.\n"
 				"Usage: fast-sdtw [options] features-a-rspecifier [features-b-rspecifier] patterns-wspecifier\n"

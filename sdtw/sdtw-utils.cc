@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "base/kaldi-common.h"
-#include "matrix/kaldi-matrix.h"
 #include "util/common-utils.h"
 
 #include "sdtw/sdtw-utils.h"

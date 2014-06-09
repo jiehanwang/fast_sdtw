@@ -65,7 +65,9 @@ struct FastPatternSearcherConfig {
 
 class FastPatternSearcher {
 public:
-	FastPatternSearcher(const FastPatternSearcherConfig &config);
+	FastPatternSearcher(const FastPatternSearcherConfig &config): config_(config) {
+		config.Check();
+	}
 
 	void SetOptions(const FastPatternSearcherConfig &config) {
 		config_ = config;
