@@ -14,11 +14,6 @@
 
 namespace kaldi {
 
-FastPatternSearcher::FastPatternSearcher(
-				const FastPatternSearcherConfig &config): config_(config) {
-	config.Check();
-}
-
 // Given a vector of utterance id + feature pairs, does a pattern search
 // between every unique pair of utterances.
 bool FastPatternSearcher::Search(
@@ -344,7 +339,6 @@ void FastPatternSearcher::PickPeaksInVector(
 	BaseFloat mx = minvalue - 1;
 	BaseFloat mn = maxvalue + 1;
 	int mxidx = -1;
-	int mnidx = -1;
 	bool findMax = true;
 	for (int i = 0; i < input_vector.size(); ++i) {
 		const BaseFloat &val = input_vector[i];
@@ -354,12 +348,10 @@ void FastPatternSearcher::PickPeaksInVector(
 		} 
 		if (val < mn) {
 			mn = val;
-			mnidx = i;
 		}
 		if (findMax && val < (mx - delta)) {
 				peak_locations->push_back(mxidx);
 				mn = val;
-				mnidx = i;
 				findMax = false;
 		} else if (!findMax && val > (mn + delta)) {
 				mx = val;
@@ -746,26 +738,6 @@ void FastPatternSearcher::WarpLinesToPaths(
 									 this_line.end.second) / 2;
 		const std::pair<size_t, size_t> midpoint =
 			std::make_pair(midpoint_row, midpoint_col);
-		// Rather than warping from the midpoint all the way to the matrix boundaries,
-		// we only warp out to three times the filter length on either side.
-		const size_t target_length = 3 * config_.smoother_length;
-		const size_t start_row = midpoint_row - 
-			std::min(target_length, std::min(midpoint_row, midpoint_col));
-		const size_t start_col = midpoint_col - 
-			std::min(target_length, std::min(midpoint_row, midpoint_col));
-		const std::pair<size_t, size_t> matrix_size =
-			std::make_pair(similarity_matrix.NumRows(), similarity_matrix.NumCols());
-		const std::pair<size_t, size_t> origin = std::make_pair(start_row, start_col);
-		const size_t row_max = matrix_size.first - 1;
-		const size_t col_max = matrix_size.second - 1;
-		const size_t end_row = midpoint_row +
-			std::min(target_length, std::min(row_max - midpoint_row,
-																			 col_max - midpoint_col));
-		const size_t end_col = midpoint_col +
-			std::min(target_length, std::min(row_max - midpoint_row,
-																			 col_max - midpoint_col));
-		const std::pair<size_t, size_t> endpoint = std::make_pair(end_row, end_col);
-
 		Path path_to_midpoint;
 		Path path_from_midpoint;
 		WarpBackward(similarity_matrix, midpoint, &path_to_midpoint);

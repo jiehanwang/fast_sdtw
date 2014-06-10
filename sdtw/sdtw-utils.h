@@ -36,6 +36,8 @@ public:
 };
 
 typedef TableWriter<KaldiObjectHolder<Path> > PathWriter;
+typedef RandomAccessTableReader<KaldiObjectHolder<Path> > RandomAccessPathReader;
+typedef SequentialTableReader<KaldiObjectHolder<Path> > SequentialPathReader;
 
 template<class T> class SparseMatrix {
 	public:

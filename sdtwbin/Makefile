@@ -10,7 +10,7 @@ OBJFILES =
 
 TESTFILES =
 
-ADDLIBS = ../sdtw/kaldi-sdtw.a ../util/kaldi-util.a ../base/kaldi-base.a ../matrix/kaldi-matrix.a
+ADDLIBS = ../sdtw/kaldi-sdtw.a ../util/kaldi-util.a ../base/kaldi-base.a ../matrix/kaldi-matrix.a ../landmarks/kaldi-landmarks.a
 
 include ../makefiles/default_rules.mk
 

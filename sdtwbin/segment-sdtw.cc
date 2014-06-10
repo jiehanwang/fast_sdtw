@@ -7,11 +7,13 @@
 #include "base/kaldi-common.h"
 #include "feat/feature-functions.h" // do I need this?
 #include "matrix/kaldi-matrix.h" // ditto
+#include "landmarks/landmark-utils.h"
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
 #include "util/common-utils.h"
 #include "util/timer.h"
 
+namespace kaldi {
 bool SegmentSeqToMatrix(const SegmentSeq &segs, Matrix<BaseFloat> *mat) {
 	KALDI_ASSERT(mat != NULL);
 	KALDI_ASSERT(segs.segs.size() > 0);
@@ -28,6 +30,7 @@ bool SegmentSeqToMatrix(const SegmentSeq &segs, Matrix<BaseFloat> *mat) {
 	}
 	return true;
 }
+}  // end namespace kaldi
 
 int main(int argc, char *argv[]) {
 	try {
