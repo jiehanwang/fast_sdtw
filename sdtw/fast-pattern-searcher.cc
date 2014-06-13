@@ -143,7 +143,7 @@ void FastPatternSearcher::ComputeThresholdedSimilarityMatrix(
 				Matrix<BaseFloat> *similarity_matrix,
 				SparseMatrix<int32> *quantized_matrix) const {
 	KALDI_ASSERT(similarity_matrix != NULL);
-	KALDI_ASSERT(similarity_matrix != NULL);
+	KALDI_ASSERT(quantized_matrix != NULL);
 	quantized_matrix->Clear();
 	const std::pair<int32, int32> size =
 		std::make_pair<int32, int32>(first_features.NumRows(), second_features.NumRows());

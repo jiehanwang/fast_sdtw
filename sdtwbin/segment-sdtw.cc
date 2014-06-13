@@ -6,7 +6,7 @@
 
 #include "base/kaldi-common.h"
 #include "feat/feature-functions.h" // do I need this?
-#include "matrix/kaldi-matrix.h" // ditto
+#include "matrix/kaldi-matrix.h"
 #include "landmarks/landmark-utils.h"
 #include "sdtw/fast-pattern-searcher.h"
 #include "sdtw/sdtw-utils.h"
@@ -30,6 +30,16 @@ bool SegmentSeqToMatrix(const SegmentSeq &segs, Matrix<BaseFloat> *mat) {
 	}
 	return true;
 }
+
+bool SegmentSeqToVectorOfLengths(const SegmentSeq &segs, std::vector<int32> *lengths) {
+	KALDI_ASSERT(lengths != NULL);
+	KALDI_ASSERT(segs.segs.size() > 0);
+	lengths->clear();
+	for (int32 i = 0; i < segs.segs.size(); ++i) {
+		lengths->push_back(segs.segs[i].num_frames);
+	}
+	return true;
+}
 }  // end namespace kaldi
 
 int main(int argc, char *argv[]) {
@@ -42,14 +52,14 @@ int main(int argc, char *argv[]) {
 				"If both segmentseqs-a-rspecifier and segmentseqs-b-rspecifier are given, search between each pair (a, b)";
 		ParseOptions po(usage);
 		Timer timer;
-		FastPatternSearcherConfig config;
+		SegmentPatternSearcherConfig config;
 		config.Register(&po);
 		po.Read(argc, argv);
 		if (po.NumArgs() < 2 || po.NumArgs() > 3) {
 			po.PrintUsage();
 			exit(1);
 		}
-		FastPatternSearcher searcher(config);
+		SegmentPatternSearcher searcher(config);
 		std::string segmentseqs_a_rspecifier, segmentseqs_b_rspecifier, patterns_wspecifier;
 		// Decide if there is one or two input feature sets to read
 		if (po.NumArgs() == 2) {
@@ -62,10 +72,12 @@ int main(int argc, char *argv[]) {
 		}
 		PathWriter pattern_writer(patterns_wspecifier);
 		// Read the first features
-		std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_a;
+		std::vector<Matrix<BaseFloat> > feats_a;
+		std::vector<std::string> ids_a;
+		std::vector<std::vector<int32> > lengths_a;
 		SequentialSegmentSeqReader segs_a_reader(segmentseqs_a_rspecifier);
 		for (; !segs_a_reader.Done(); segs_a_reader.Next()) {
-			std::string utt = segs_a_reader.Key();
+			std::string utt_id = segs_a_reader.Key();
 			SegmentSeq segs(segs_a_reader.Value());
 			segs_a_reader.FreeCurrent();
 			if (segs.segs.size() == 0) {
@@ -74,15 +86,21 @@ int main(int argc, char *argv[]) {
 			}
 			Matrix<BaseFloat> mat;
 			SegmentSeqToMatrix(segs, &mat);
-			feats_a.push_back(std::make_pair(utt, mat));
+			std::vector<int32> lengths;
+			SegmentSeqToVectorOfLengths(segs, &lengths);
+			feats_a.push_back(mat);
+			lengths_a.push_back(lengths);
+			ids_a.push_back(utt_id);
 		}
 		// If there is a second set of features, read those then search. Otherwise, just search
 		// using the first set.
 		if (po.NumArgs() == 3) {
-			std::vector<std::pair<std::string, Matrix<BaseFloat> > > feats_b;
+			std::vector<Matrix<BaseFloat> > feats_b;
+			std::vector<std::string> ids_b;
+			std::vector<std::vector<int32> > lengths_b;
 			SequentialSegmentSeqReader segs_b_reader(segmentseqs_b_rspecifier);
 			for (; !segs_b_reader.Done(); segs_b_reader.Next()) {
-				std::string utt = segs_b_reader.Key();
+				std::string utt_id = segs_b_reader.Key();
 				SegmentSeq segs(segs_b_reader.Value());
 				segs_b_reader.FreeCurrent();
 				if (segs.segs.size() == 0) {
@@ -91,11 +109,15 @@ int main(int argc, char *argv[]) {
 				}
 				Matrix<BaseFloat> mat;
 				SegmentSeqToMatrix(segs, &mat);
-				feats_b.push_back(std::make_pair(utt, mat));
+				std::vector<int32> lengths;
+				SegmentSeqToVectorOfLengths(segs, &lengths);
+				feats_b.push_back(mat);
+				lengths_b.push_back(lengths);
+				ids_b.push_back(utt_id);
 			}
-			searcher.Search(feats_a, feats_b, &pattern_writer);
+			searcher.Search(feats_a, lengths_a, ids_a, feats_b, lengths_b, ids_b, &pattern_writer);
 		} else {
-			searcher.Search(feats_a, &pattern_writer);
+			searcher.Search(feats_a, lengths_a, ids_a, &pattern_writer);
 		}
 		double elapsed = timer.Elapsed();
 		KALDI_LOG << "Time taken: " << elapsed << " seconds.";
